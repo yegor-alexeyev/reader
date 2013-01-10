@@ -1,0 +1,1 @@
+handle SIGTERM noprint nostop pass

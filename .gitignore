@@ -1,0 +1,6 @@
+Debug
+Release
+/.metadata
+/opencv
+/pdu
+!/pdu/*.asn1
