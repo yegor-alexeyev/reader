@@ -2,5 +2,5 @@ Debug
 Release
 /.metadata
 /opencv
-/pdu
+/pdu/*
 !/pdu/*.asn1

@@ -1,0 +1,11 @@
+VideoCameraModule DEFINITIONS ::= BEGIN
+  UINT32 ::= INTEGER (0..4294967295)
+  INT64 ::= INTEGER  -- compiles to "long" with -fnative-types asn1c option
+  BufferReference ::= SEQUENCE {
+                index    UINT32,
+                offset   UINT32,
+                size     UINT32,
+                timestamp-seconds INT64,
+                timestamp-microseconds INT64
+        }
+END
