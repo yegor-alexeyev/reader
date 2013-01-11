@@ -29,11 +29,11 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.67815467" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.728760443" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.226760885" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include"/>
-									<listOptionValue builtIn="false" value="/home/yegor/workspace-cpp/autofocus/reader/src/asn.1"/>
-									<listOptionValue builtIn="false" value="/home/yegor/workspace-cpp/autofocus/reader/src"/>
-									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include"/>
-									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include"/>
+									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include}"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include}"/>
+									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include}"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.121162212" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1642557878" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -42,9 +42,9 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.1090212607" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.859251675" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.2088531108" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include"/>
-									<listOptionValue builtIn="false" value="/home/yegor/workspace-cpp/autofocus/reader/src/asn.1"/>
-									<listOptionValue builtIn="false" value="/home/yegor/workspace-cpp/autofocus/reader/src"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include"/>
 								</option>
@@ -52,8 +52,15 @@
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.85253072" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.326116316" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
-								<option id="gnu.cpp.link.option.libs.231403333" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs"/>
-								<option id="gnu.cpp.link.option.paths.796005145" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
+								<option id="gnu.cpp.link.option.libs.231403333" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="opencv_imgproc"/>
+									<listOptionValue builtIn="false" value="rt"/>
+									<listOptionValue builtIn="false" value="opencv_highgui"/>
+									<listOptionValue builtIn="false" value="opencv_core"/>
+								</option>
+								<option id="gnu.cpp.link.option.paths.796005145" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/lib}&quot;"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.949056710" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>

@@ -29,6 +29,9 @@ struct frame_buffer {
 	int index;
 };
 
+const uint32_t CAMERA_FRAME_WIDTH = 640;
+const uint32_t CAMERA_FRAME_HEIGHT = 480;
+
 std::vector<frame_buffer> map_buffers(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
@@ -143,10 +146,14 @@ int read_frame(int deviceDescriptor, int mqdes,
 	readyBuffer.index = buf.index;
 	readyBuffer.offset = buf.m.offset;
 	readyBuffer.size = buf.bytesused;
+//TODO change back to frame timestamp
 	readyBuffer.timestamp_seconds = tp.tv_sec;
 	readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
 //	readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
 //	readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
+
+	readyBuffer.width = CAMERA_FRAME_WIDTH;
+	readyBuffer.height = CAMERA_FRAME_HEIGHT;
 
 	std::array<char,1024> ipc_buffer;
 	asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
@@ -192,8 +199,8 @@ int main(int, char**) {
 //	set_absolute_exposure(9000,deviceDescriptor);
 
 	memset(&format, 0, sizeof(v4l2_format));
-	format.fmt.pix.width = 1600;
-	format.fmt.pix.height = 1200;
+	format.fmt.pix.width = CAMERA_FRAME_WIDTH;
+	format.fmt.pix.height = CAMERA_FRAME_HEIGHT;
 //	format.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
 	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 

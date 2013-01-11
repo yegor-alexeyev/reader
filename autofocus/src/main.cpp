@@ -42,6 +42,12 @@ void fillWithLumaFromYUY2(uint8_t yuy2[],size_t width,size_t height,uint8_t luma
 }
 
 
+struct FrameBuffer {
+	void* pointer;
+	size_t width;
+	size_t height;
+};
+
 int main() {
     int deviceDescriptor = open ("/dev/video0", O_RDWR /* required */ | O_NONBLOCK, 0);
     if (deviceDescriptor == -1) {
@@ -56,10 +62,8 @@ int main() {
 #endif
 
 
-	std::vector<uint8_t> iminput(1600*1200*3);
+//	std::vector<uint8_t> iminput(width*height*3);
 
-    int width = 1600;
-    int height = 1200;
     int bpp = 1;
 
     bool isAutofocusAvailable = isLogitechAutofocusModeSupported(deviceDescriptor);
@@ -84,7 +88,7 @@ int main() {
 	}
 
 
-	std::vector<void*> buffers;
+	std::vector<FrameBuffer> buffers;
 
 	mq_attr attr;
 	if (-1 == mq_getattr(mqdes,&attr)) {
@@ -99,11 +103,7 @@ int main() {
 	unsigned priority;
 	int count = 0;
 
-	size_t buffer_size = 1600*1200*2;
 	std::array<char,1024> mq_buffer;
-#ifdef USE_OPENCV
-	cv::Mat output(height,width,CV_8UC3);
-#endif
 	while (1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
@@ -123,6 +123,9 @@ int main() {
 			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),res);
 
         uint32_t index = readyBuffer.index;
+		#ifdef USE_OPENCV
+			cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
+		#endif
 
 
 
@@ -130,23 +133,32 @@ int main() {
     	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
 
         if (index >= buffers.size()) {
-        	buffers.resize(index+1, NULL);
+        	buffers.resize(index+1);
         }
-        if (buffers[index] == NULL) {
-        	buffers[index] = mmap (NULL, buffer_size,
+
+//TODO Finalize and test the dynamic change of the frame resolution functionality
+        FrameBuffer& savedBuffer = buffers[index];
+        if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
+        	if (savedBuffer.pointer != nullptr) {
+    			munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
+        	}
+        	void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
         				 PROT_READ,
         				 MAP_SHARED,
         				 deviceDescriptor, readyBuffer.offset);
-        	if (buffers[index] == MAP_FAILED) {
+        	if (pointer == MAP_FAILED) {
         		printf("mmap failed");
         		return 1;
         	}
+        	savedBuffer.pointer = pointer;
+        	savedBuffer.width = readyBuffer.width;
+        	savedBuffer.height = readyBuffer.height;
         }
 
 
 		int err  = errno;
 #ifdef USE_OPENCV
-		cv::Mat input(height,width,CV_8UC2,(uint8_t*)buffers[index]);
+		cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
 		cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
 #endif
 
@@ -175,8 +187,10 @@ int main() {
 
 
 
-	for (void* ptr: buffers) {
-		munmap (ptr, buffer_size);
+	for (FrameBuffer buffer: buffers) {
+		if (buffer.pointer != nullptr) {
+			munmap (buffer.pointer, buffer.width*buffer.height*2);
+		}
 	}
 
 	return 0;

@@ -5,6 +5,8 @@ VideoCameraModule DEFINITIONS ::= BEGIN
                 index    UINT32,
                 offset   UINT32,
                 size     UINT32,
+                width    UINT32,
+                height   UINT32,
                 timestamp-seconds INT64,
                 timestamp-microseconds INT64
         }
