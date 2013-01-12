@@ -211,6 +211,9 @@ int main(int, char**) {
 		return 1;
 	}
 
+	set_fps(deviceDescriptor,30);
+
+
 	std::vector<frame_buffer> buffers = map_buffers(deviceDescriptor);
 	start_capturing(deviceDescriptor, buffers);
 

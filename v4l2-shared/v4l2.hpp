@@ -60,6 +60,26 @@ uint8_t get_focus_variable( int deviceDescriptor) {
 }
 
 
+void set_fps( int deviceDescriptor, int fps) {
+
+	v4l2_streamparm streamparm;
+	memset(&streamparm,0,sizeof(streamparm));
+    streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int ret = xioctl(deviceDescriptor, VIDIOC_G_PARM, &streamparm);
+	assert(ret != -1);
+	assert(streamparm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME);
+
+
+    streamparm.parm.capture.timeperframe.numerator = 1;
+    streamparm.parm.capture.timeperframe.denominator = fps;
+
+    ret = xioctl(deviceDescriptor, VIDIOC_S_PARM, &streamparm);
+	assert(ret != -1);
+
+	printf("fps set: %d/%d\n", streamparm.parm.capture.timeperframe.denominator/streamparm.parm.capture.timeperframe.numerator);
+}
+
+
 
 void set_focus_variable(uint8_t value, int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_FOCUS_LOGITECH,value};
