@@ -4,3 +4,4 @@ Debug
 /pdu/*
 !/pdu/*.asn1
 !/pdu/*.sh
+/*.log
