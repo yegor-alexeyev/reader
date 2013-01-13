@@ -48,6 +48,11 @@ struct FrameBuffer {
 	size_t height;
 };
 
+
+int getInitialDirection(int focusValue) {
+	return focusValue < 192 ? 255 : 0;
+}
+
 int main() {
     int deviceDescriptor = open ("/dev/video0", O_RDWR /* required */ | O_NONBLOCK, 0);
     if (deviceDescriptor == -1) {
