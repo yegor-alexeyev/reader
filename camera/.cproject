@@ -25,7 +25,7 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.472815216" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.541357538" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.893963094" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1502909427" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -88,7 +88,7 @@
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.835733020" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.157526442" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.428861760" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1508554048" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -98,7 +98,7 @@
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.1262588259" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.522675479" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1120839031" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -119,6 +119,16 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.1652910457" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1209021642" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
+						</toolChain>
+					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.exe.release.337467216.708591677" name="/" resourcePath="src/shared">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.2021920638" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.release" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.815737781" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.922787102"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1362639538" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.232814214"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.249534170" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release.44520194"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.release.1463805172" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release.18348859"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.203037381" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1310883085"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.778285250" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release.1652910457"/>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>

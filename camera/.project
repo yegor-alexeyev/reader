@@ -32,9 +32,9 @@
 			<locationURI>WORKSPACE_LOC/pdu</locationURI>
 		</link>
 		<link>
-			<name>src/v4l2-shared</name>
+			<name>src/shared</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/v4l2-shared</locationURI>
+			<locationURI>WORKSPACE_LOC/shared</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

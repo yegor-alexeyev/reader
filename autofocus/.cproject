@@ -31,7 +31,7 @@
 								<option id="gnu.cpp.compiler.option.include.paths.226760885" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include}"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include}"/>
 									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include}"/>
 								</option>
@@ -43,7 +43,7 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.859251675" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.2088531108" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include"/>
 									<listOptionValue builtIn="false" value="../autofocus/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include"/>
@@ -79,7 +79,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="pdu|123" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="123|pdu" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/pdu"/>
 					</sourceEntries>
 				</configuration>
@@ -112,7 +112,7 @@
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.1931578253" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.604335149" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_highgui/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_imgproc/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_core/include}&quot;"/>
@@ -125,7 +125,7 @@
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.173430417" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.495104082" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/v4l2-shared}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1105435206" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -148,6 +148,16 @@
 							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.1196626417" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.681283008" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
+						</toolChain>
+					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.exe.release.182831414.1051730803" name="/" resourcePath="src/shared">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.1862968863" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.release" unusedChildren="">
+							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1618275513" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base.1027632653"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1739815711" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.1407468442"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.release.1441313103" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.release.646327202"/>
+							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.release.140188312" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.release.825062559"/>
+							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.1003923871" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.834504467"/>
+							<tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.416420152" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release.1196626417"/>
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
