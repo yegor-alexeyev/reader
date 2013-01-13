@@ -177,9 +177,6 @@ int main(int, char**) {
 	int released_frames_mq = mq_open("/video0-released-frames",
 			O_RDONLY | O_CREAT | O_NONBLOCK, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
 
-//	int mqdes = mq_open("/video0-events2", O_WRONLY | O_CREAT | O_NONBLOCK,
-//			S_IRWXU | S_IRWXG | S_IRWXO, NULL);
-
 	unsigned int counter;
 
 
@@ -254,11 +251,6 @@ int main(int, char**) {
 
 			std::array<char,1024> ipc_buffer;
 			asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
-
-
-		//	mq_send(mqdes, ipc_buffer.data(), encode_result.encoded,0);
-
-
 
 
 			int ret = sendto(announce_socket,ipc_buffer.data(),encode_result.encoded,0,(struct sockaddr *) &announce_address,sizeof(announce_address));

@@ -88,19 +88,11 @@ int main() {
     }
 
 
-//    int mqdes = mq_open("/video0-events2", O_RDONLY | O_CREAT,S_IRWXU | S_IRWXG | S_IRWXO,NULL);
-//	if (-1 == mqdes) {
-//		printf("mq_open failed");
-//		return 1;
-//	}
-
     int announce_socket;
     in_addr iaddr;
 
-    // set content of struct saddr and imreq to zero
     memset(&iaddr, 0, sizeof(struct in_addr));
 
-    // open a UDP socket
     announce_socket = socket(AF_INET, SOCK_DGRAM, 0);
     if ( announce_socket < 0 ) {
       perror("Error creating socket");
@@ -121,7 +113,6 @@ int main() {
 
     ip_mreq mreq;
     memset(&mreq,0,sizeof(mreq));
-    /* use setsockopt() to request that the kernel join a multicast group */
     mreq.imr_multiaddr.s_addr=inet_addr(CAMERA_ANNOUNCE_GROUP);
     mreq.imr_interface.s_addr=INADDR_ANY;
     if (setsockopt(announce_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mreq,sizeof(mreq)) < 0) {
@@ -141,11 +132,6 @@ int main() {
 	std::vector<FrameBuffer> buffers;
 
 	mq_attr attr;
-//	if (-1 == mq_getattr(mqdes,&attr)) {
-//		printf("mq_getattr failed");
-//		return 1;
-//	}
-
 	if (-1 == mq_getattr(released_frames_mq,&attr)) {
 		printf("mq_getattr failed");
 		return 1;
@@ -159,13 +145,6 @@ int main() {
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 
 			std::vector<char> data(attr.mq_msgsize+1);
-//			int res = mq_receive(mqdes,data.data(),data.size(),&priority);
-
-		//	continue;
-//			if (res == -1) {
-//				std::cout << "Message queue has been broken" << std::endl;
-//				break;
-//			}
 
 			msghdr socket_message;
 			memset(&socket_message,0,sizeof(socket_message));
