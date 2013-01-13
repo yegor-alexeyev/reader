@@ -252,25 +252,24 @@ int main(int, char**) {
 		}
 
 		std::array<char,16384> message_buffer;
-		int result = mq_receive(released_frames_mq, message_buffer.data(),message_buffer.size(),NULL);
-		if (result == -1) {
-			perror("mq_receive");
-			continue;
+		while (true) {
+			int result = mq_receive(released_frames_mq, message_buffer.data(),message_buffer.size(),NULL);
+			if (result == -1) {
+				break;
+			}
+			BufferReference buffer_reference;
+			memset(&buffer_reference,0,sizeof(BufferReference));
+			void* input_pointer = &buffer_reference;
+			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,message_buffer.data(),result);
+			struct v4l2_buffer buffer;
+			memset(&buffer, 0, sizeof(buffer));
+			buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+			buffer.index = buffer_reference.index;
+			buffer.memory = V4L2_MEMORY_MMAP;
+
+			if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer))
+				perror("VIDIOC_QBUF");
 		}
-
-		BufferReference buffer_reference;
-		memset(&buffer_reference,0,sizeof(BufferReference));
-		void* input_pointer = &buffer_reference;
-		ber_decode(0,&asn_DEF_BufferReference,&input_pointer,message_buffer.data(),result);
-		struct v4l2_buffer buffer;
-		memset(&buffer, 0, sizeof(buffer));
-		buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buffer.index = buffer_reference.index;
-		buffer.memory = V4L2_MEMORY_MMAP;
-
-		if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer))
-			perror("VIDIOC_QBUF");
-
 	}
 
 	v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
