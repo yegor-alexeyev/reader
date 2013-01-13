@@ -5,8 +5,8 @@
  *      Author: yegor
  */
 
-#ifndef CAMERA_HPP_
-#define CAMERA_HPP_
+#ifndef V4L2_HPP_
+#define V4L2_HPP_
 
 #define V4L2_CID_BASE_EXTCTR                0x0A046D01
 #define V4L2_CID_BASE_LOGITECH              V4L2_CID_BASE_EXTCTR
@@ -122,4 +122,4 @@ void disable_output_processing( int deviceDescriptor) {
 //}
 
 
-#endif /* CAMERA_HPP_ */
+#endif /* V4L2_HPP_ */

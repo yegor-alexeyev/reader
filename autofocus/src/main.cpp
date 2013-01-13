@@ -24,7 +24,15 @@
 #include <vector>
 #include <cstring>
 #include <cassert>
+
 #include "v4l2.hpp"
+#include "ipc.hpp"
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 
 #include <array>
 
@@ -80,11 +88,48 @@ int main() {
     }
 
 
-    int mqdes = mq_open("/video0-events2", O_RDONLY | O_CREAT,S_IRWXU | S_IRWXG | S_IRWXO,NULL);
-	if (-1 == mqdes) {
-		printf("mq_open failed");
-		return 1;
+//    int mqdes = mq_open("/video0-events2", O_RDONLY | O_CREAT,S_IRWXU | S_IRWXG | S_IRWXO,NULL);
+//	if (-1 == mqdes) {
+//		printf("mq_open failed");
+//		return 1;
+//	}
+
+    int announce_socket;
+    in_addr iaddr;
+
+    // set content of struct saddr and imreq to zero
+    memset(&iaddr, 0, sizeof(struct in_addr));
+
+    // open a UDP socket
+    announce_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if ( announce_socket < 0 ) {
+      perror("Error creating socket");
+      exit(0);
 	}
+
+    sockaddr_in saddr;
+    memset(&saddr, 0, sizeof(struct sockaddr_in));
+
+    saddr.sin_family = AF_INET;
+    saddr.sin_port = htons(CAMERA_ANNOUNCE_PORT);; // Use the first free port
+    saddr.sin_addr.s_addr = INADDR_ANY; // bind socket to any interface
+    int status = bind(announce_socket, (struct sockaddr *)&saddr, sizeof(sockaddr_in));
+
+    if ( status < 0 )
+      perror("Error binding socket to interface"), exit(0);
+
+
+    ip_mreq mreq;
+    memset(&mreq,0,sizeof(mreq));
+    /* use setsockopt() to request that the kernel join a multicast group */
+    mreq.imr_multiaddr.s_addr=inet_addr(CAMERA_ANNOUNCE_GROUP);
+    mreq.imr_interface.s_addr=INADDR_ANY;
+    if (setsockopt(announce_socket,IPPROTO_IP,IP_ADD_MEMBERSHIP,&mreq,sizeof(mreq)) < 0) {
+	  perror("setsockopt");
+	  exit(1);
+    }
+
+
 	int released_frames_mq = mq_open("/video0-released-frames",
 			O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
 	if (-1 == released_frames_mq) {
@@ -96,10 +141,10 @@ int main() {
 	std::vector<FrameBuffer> buffers;
 
 	mq_attr attr;
-	if (-1 == mq_getattr(mqdes,&attr)) {
-		printf("mq_getattr failed");
-		return 1;
-	}
+//	if (-1 == mq_getattr(mqdes,&attr)) {
+//		printf("mq_getattr failed");
+//		return 1;
+//	}
 
 	if (-1 == mq_getattr(released_frames_mq,&attr)) {
 		printf("mq_getattr failed");
@@ -114,18 +159,28 @@ int main() {
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 
 			std::vector<char> data(attr.mq_msgsize+1);
-			int res = mq_receive(mqdes,data.data(),data.size(),&priority);
+//			int res = mq_receive(mqdes,data.data(),data.size(),&priority);
+
 		//	continue;
-			if (res == -1) {
-				std::cout << "Message queue has been broken" << std::endl;
-				break;
+//			if (res == -1) {
+//				std::cout << "Message queue has been broken" << std::endl;
+//				break;
+//			}
+
+			msghdr socket_message;
+			memset(&socket_message,0,sizeof(socket_message));
+			int result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
+			if (result <= 0) {
+				perror("recvfrom");
+				exit(1);
 			}
+
 	    	timespec tp;
 	    	clock_gettime(CLOCK_MONOTONIC,&tp);
 
 			void* input_pointer = &readyBuffer;
 
-			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),res);
+			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
 
         uint32_t index = readyBuffer.index;
 		#ifdef USE_OPENCV
@@ -197,6 +252,7 @@ int main() {
 			munmap (buffer.pointer, buffer.width*buffer.height*2);
 		}
 	}
+	close(announce_socket);
 
 	return 0;
 }

@@ -17,7 +17,13 @@
 #include <assert.h>
 #include <string.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+
 #include "v4l2.hpp"
+#include "ipc.hpp"
 
 #include <array>
 
@@ -112,56 +118,7 @@ void unmap_buffers(std::vector<frame_buffer> buffers) {
 
 int read_frame(int deviceDescriptor, int mqdes,
 		const std::vector<frame_buffer>& buffers) {
-	struct v4l2_buffer buf;
 
-	memset(&buf, 0, sizeof(buf));
-
-	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	buf.memory = V4L2_MEMORY_MMAP;
-
-	if (-1 == xioctl(deviceDescriptor, VIDIOC_DQBUF, &buf)) {
-		switch (errno) {
-		case EAGAIN:
-			return 0;
-
-		case EIO:
-			/* Could ignore EIO, see spec. */
-
-			/* fall through */
-
-		default:
-			perror("VIDIOC_DQBUF");
-		}
-	}
-
-
-	printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
-//	printf("Real time: seconds = %ld, us = %ld\n", tp.tv_sec,tp.tv_nsec/1000);
-
-	timespec tp;
-	clock_gettime(CLOCK_MONOTONIC,&tp);
-
-
-	BufferReference readyBuffer;
-	readyBuffer.index = buf.index;
-	readyBuffer.offset = buf.m.offset;
-	readyBuffer.size = buf.bytesused;
-//TODO change back to frame timestamp
-	readyBuffer.timestamp_seconds = tp.tv_sec;
-	readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
-//	readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
-//	readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
-
-	readyBuffer.width = CAMERA_FRAME_WIDTH;
-	readyBuffer.height = CAMERA_FRAME_HEIGHT;
-
-	std::array<char,1024> ipc_buffer;
-	asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
-
-
-	mq_send(mqdes, ipc_buffer.data(), encode_result.encoded,0);
-
-	return 1;
 }
 
 sig_atomic_t volatile running = 1;
@@ -220,10 +177,25 @@ int main(int, char**) {
 	int released_frames_mq = mq_open("/video0-released-frames",
 			O_RDONLY | O_CREAT | O_NONBLOCK, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
 
-	int mqdes = mq_open("/video0-events2", O_WRONLY | O_CREAT | O_NONBLOCK,
-			S_IRWXU | S_IRWXG | S_IRWXO, NULL);
+//	int mqdes = mq_open("/video0-events2", O_WRONLY | O_CREAT | O_NONBLOCK,
+//			S_IRWXU | S_IRWXG | S_IRWXO, NULL);
 
 	unsigned int counter;
+
+
+
+	int announce_socket=socket(AF_INET,SOCK_DGRAM,0);
+	if (announce_socket < 0) {
+	  perror("socket");
+	  exit(1);
+	}
+
+	sockaddr_in announce_address;
+	memset(&announce_address,0,sizeof(announce_address));
+	announce_address.sin_family=AF_INET;
+	announce_address.sin_addr.s_addr=inet_addr(CAMERA_ANNOUNCE_GROUP);
+	announce_address.sin_port=htons(CAMERA_ANNOUNCE_PORT);
+
 
 	while (running != 0) {
 		fd_set fds;
@@ -236,18 +208,65 @@ int main(int, char**) {
 
 //		std::cout << "Frame counter: " << counter << std::endl;
 
-		if (-1 == r) {
-			if (EINTR == errno)
-				continue;
-			perror("select");
-		}
+		if (r > 0) {
+			struct v4l2_buffer buf;
 
-		if (0 == r) {
-			fprintf(stderr, "select timeout\n");
-			exit(EXIT_FAILURE);
-		}
+			memset(&buf, 0, sizeof(buf));
 
-		if (read_frame(deviceDescriptor, mqdes, buffers)) {
+			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+			buf.memory = V4L2_MEMORY_MMAP;
+
+			if (-1 == xioctl(deviceDescriptor, VIDIOC_DQBUF, &buf)) {
+				switch (errno) {
+				case EAGAIN:
+					continue;
+
+				case EIO:
+					/* Could ignore EIO, see spec. */
+
+					/* fall through */
+
+				default:
+					perror("VIDIOC_DQBUF");
+				}
+			}
+
+
+			printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
+		//	printf("Real time: seconds = %ld, us = %ld\n", tp.tv_sec,tp.tv_nsec/1000);
+
+			timespec tp;
+			clock_gettime(CLOCK_MONOTONIC,&tp);
+
+
+			BufferReference readyBuffer;
+			readyBuffer.index = buf.index;
+			readyBuffer.offset = buf.m.offset;
+			readyBuffer.size = buf.bytesused;
+		//TODO change back to frame timestamp
+			readyBuffer.timestamp_seconds = tp.tv_sec;
+			readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
+		//	readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
+		//	readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
+
+			readyBuffer.width = CAMERA_FRAME_WIDTH;
+			readyBuffer.height = CAMERA_FRAME_HEIGHT;
+
+			std::array<char,1024> ipc_buffer;
+			asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
+
+
+		//	mq_send(mqdes, ipc_buffer.data(), encode_result.encoded,0);
+
+
+
+
+			int ret = sendto(announce_socket,ipc_buffer.data(),encode_result.encoded,0,(struct sockaddr *) &announce_address,sizeof(announce_address));
+			if (ret < 0) {
+			   perror("sendto");
+			   exit(1);
+			}
+
 			counter++;
 		}
 
@@ -280,6 +299,8 @@ int main(int, char**) {
 
 	if (-1 == close(deviceDescriptor))
 		perror("close");
+
+	close(announce_socket);
 
 	return 0;
 }
