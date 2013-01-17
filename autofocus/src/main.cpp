@@ -32,7 +32,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <boost/timer/timer.hpp>
 
+#include <boost/circular_buffer.hpp>
 
 #include <array>
 
@@ -57,6 +59,42 @@ struct FrameBuffer {
 };
 
 
+class FocusStabilizationDetector {
+private:
+	boost::circular_buffer<uint32_t> history;
+	size_t stabiliseCount;
+	size_t measurementCount;
+public:
+	FocusStabilizationDetector() :
+		history(2),
+		stabiliseCount(0),
+		measurementCount(0)
+	{
+
+	}
+
+
+	void addFocusMeasurementResult(uint32_t focusSum) {
+		if (measurementCount >= 5) {
+			if ((history[0] == history[1] && history[1] == focusSum) ||
+					(history[0] < history[1] && history[1] > focusSum) ||
+					(history[0] > history[1] && history[1] < focusSum)) {
+				stabiliseCount++;
+			} else {
+				stabiliseCount= 0;
+			}
+		}
+		history.push_back(focusSum);
+		measurementCount++;
+	}
+
+	bool isFocusStabilised() {
+		return stabiliseCount >= 3;
+	}
+};
+
+
+
 int getInitialDirection(int focusValue) {
 	return focusValue < 192 ? 255 : 0;
 }
@@ -67,7 +105,6 @@ int main() {
     	std::cout << "Unable to open device";
     	return 1;
     }
-//    set_focus_variable(100,deviceDescriptor);
 
 
 #ifdef USE_OPENCV
@@ -140,6 +177,12 @@ int main() {
 	int count = 0;
 
 	std::array<char,1024> mq_buffer;
+	FocusStabilizationDetector detector;
+	timespec focus_change_time;
+    get_focus_variable(deviceDescriptor);
+    set_focus_variable(0,deviceDescriptor);
+	clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
+	bool cr_needed = false;
 	while (1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
@@ -148,12 +191,15 @@ int main() {
 
 			msghdr socket_message;
 			memset(&socket_message,0,sizeof(socket_message));
-			int result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
+			int result;
+			{
+//				boost::timer::auto_cpu_timer timer;
+				result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
+			}
 			if (result <= 0) {
 				perror("recvfrom");
 				exit(1);
 			}
-
 	    	timespec tp;
 	    	clock_gettime(CLOCK_MONOTONIC,&tp);
 
@@ -169,7 +215,7 @@ int main() {
 
 
 //    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
-    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
+//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
 
         if (index >= buffers.size()) {
         	buffers.resize(index+1);
@@ -198,6 +244,38 @@ int main() {
 		int err  = errno;
 #ifdef USE_OPENCV
 		cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
+		uint32_t focus_sum = 0;
+		for (uint32_t row = input.rows/3 +1; row < input.rows*2/3;row++) {
+			for (uint32_t column = input.cols/3 +1; column < input.cols*2/3;column++) {
+				focus_sum += abs(input.at<uint8_t>(cv::Point(column,row)) - input.at<uint8_t>(cv::Point(column,row-1)));
+				focus_sum += abs(input.at<uint8_t>(cv::Point(column,row)) - input.at<uint8_t>(cv::Point(column-1,row)));
+			}
+		}
+		detector.addFocusMeasurementResult(focus_sum);
+		if (readyBuffer.timestamp_seconds > focus_change_time.tv_sec || (readyBuffer.timestamp_seconds == focus_change_time.tv_sec && readyBuffer.timestamp_microseconds > (focus_change_time.tv_nsec + 500)/1000)) {
+			if (cr_needed) {
+				std::cout << std::endl;
+				cr_needed = false;
+			}
+		}
+		std::cout << focus_sum << ",";
+		if (detector.isFocusStabilised()) {
+			cr_needed = true;
+			detector = FocusStabilizationDetector();
+
+			uint8_t focus = get_focus_variable(deviceDescriptor);
+//			if (focus == 255) {
+//				break;
+//			}
+		    set_focus_variable(focus == 255 ? 0 : 255,deviceDescriptor);
+			clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
+
+//		    set_focus_variable(focus +1,deviceDescriptor);
+		}
+
+
+//		std::cout << "Focus sum = " << focus_sum << std::endl;
+
 		cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
 #endif
 
@@ -222,7 +300,7 @@ int main() {
         }
 #endif
 	}
-	std::cout << "count:" << count << std::endl;
+//	std::cout << "count:" << count << std::endl;
 
 
 

@@ -54,7 +54,7 @@ uint8_t get_focus_variable( int deviceDescriptor) {
 	assert(ret != -1);
 	assert(control.value >= 0 && control.value <= 0xFF);
 
-	printf("get focus value: %d\n", control.value);
+//	printf("get focus value: %d\n", control.value);
 
 	return control.value;
 }
@@ -84,7 +84,7 @@ void set_fps( int deviceDescriptor, int fps) {
 void set_focus_variable(uint8_t value, int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_FOCUS_LOGITECH,value};
 
-	printf("set focus value: %d\n", control.value);
+//	printf("set focus value: %d\n", control.value);
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);

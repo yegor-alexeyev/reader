@@ -116,11 +116,6 @@ void unmap_buffers(std::vector<frame_buffer> buffers) {
 	}
 }
 
-int read_frame(int deviceDescriptor, int mqdes,
-		const std::vector<frame_buffer>& buffers) {
-
-}
-
 sig_atomic_t volatile running = 1;
 
 void termination_handler(int signal) {
@@ -143,7 +138,7 @@ int main(int, char**) {
 		return 1;
 	}
 
-	disable_output_processing(deviceDescriptor);
+//	disable_output_processing(deviceDescriptor);
 
 	v4l2_format format;
 	memset(&format, 0, sizeof(v4l2_format));
@@ -173,6 +168,7 @@ int main(int, char**) {
 
 	std::vector<frame_buffer> buffers = map_buffers(deviceDescriptor);
 	start_capturing(deviceDescriptor, buffers);
+
 
 	int released_frames_mq = mq_open("/video0-released-frames",
 			O_RDONLY | O_CREAT | O_NONBLOCK, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
@@ -240,11 +236,11 @@ int main(int, char**) {
 			readyBuffer.index = buf.index;
 			readyBuffer.offset = buf.m.offset;
 			readyBuffer.size = buf.bytesused;
-		//TODO change back to frame timestamp
-			readyBuffer.timestamp_seconds = tp.tv_sec;
-			readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
-		//	readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
-		//	readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
+		//DONE change back to frame timestamp
+//			readyBuffer.timestamp_seconds = tp.tv_sec;
+//			readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
+			readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
+			readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
 
 			readyBuffer.width = CAMERA_FRAME_WIDTH;
 			readyBuffer.height = CAMERA_FRAME_HEIGHT;
