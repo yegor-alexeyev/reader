@@ -163,6 +163,9 @@ int main(int, char**) {
 		return 1;
 	}
 
+	set_auto_white_balance(deviceDescriptor,false);
+	printf("Is auto white balance set = %u\n", is_auto_white_balance_set(deviceDescriptor));
+
 	set_fps(deviceDescriptor,30);
 
 

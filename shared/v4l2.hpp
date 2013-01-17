@@ -1,12 +1,10 @@
-/*
- * camera.hpp
- *
- *  Created on: Dec 19, 2012
- *      Author: yegor
- */
-
 #ifndef V4L2_HPP_
 #define V4L2_HPP_
+
+#include <libv4l2.h>
+
+#include <linux/videodev2.h>
+
 
 #define V4L2_CID_BASE_EXTCTR                0x0A046D01
 #define V4L2_CID_BASE_LOGITECH              V4L2_CID_BASE_EXTCTR
@@ -89,6 +87,22 @@ void set_focus_variable(uint8_t value, int deviceDescriptor) {
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);
 }
+
+void set_auto_white_balance(int deviceDescriptor, bool value) {
+	v4l2_control control {V4L2_CID_AUTO_WHITE_BALANCE,value ? 1 : 0};
+	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
+	assert(ret != -1);
+}
+
+
+bool is_auto_white_balance_set(int deviceDescriptor) {
+	v4l2_control control {V4L2_CID_AUTO_WHITE_BALANCE,0};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
+	assert(ret != -1);
+	return control.value != 0;
+}
+
 
 void set_absolute_exposure(uint16_t value, int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value};
