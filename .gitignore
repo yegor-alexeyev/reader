@@ -5,3 +5,4 @@ Debug
 !/pdu/*.asn1
 !/pdu/*.sh
 /*.log
+/*.csv
