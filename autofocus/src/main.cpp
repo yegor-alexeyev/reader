@@ -59,16 +59,20 @@ struct FrameBuffer {
 };
 
 
-class FocusStabilizationDetector {
+class FocusAnalyser {
 private:
 	boost::circular_buffer<uint32_t> history;
 	size_t stabiliseCount;
 	size_t measurementCount;
+	uint32_t maximumValue;
+	size_t maximumValueIndex;
 public:
-	FocusStabilizationDetector() :
+	FocusAnalyser() :
 		history(2),
 		stabiliseCount(0),
-		measurementCount(0)
+		measurementCount(0),
+		maximumValue(0),
+		maximumValueIndex(0)
 	{
 
 	}
@@ -86,6 +90,14 @@ public:
 		}
 		history.push_back(focusSum);
 		measurementCount++;
+		if (maximumValue < focusSum) {
+			maximumValueIndex = measurementCount;
+			maximumValue = focusSum;
+		}
+	}
+
+	size_t getMaximumValueIndex() {
+		return maximumValueIndex;
 	}
 
 	bool isFocusStabilised() {
@@ -177,10 +189,11 @@ int main() {
 	int count = 0;
 
 	std::array<char,1024> mq_buffer;
-	FocusStabilizationDetector detector;
+	FocusAnalyser detector;
 	timespec focus_change_time;
-    get_focus_variable(deviceDescriptor);
-    set_focus_variable(0,deviceDescriptor);
+    set_focus_variable(deviceDescriptor,0);
+    int iteration_number = 1;
+    size_t indexOfMaximumFromZero;
 	clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
 	bool cr_needed = false;
 	while (1) {
@@ -206,6 +219,17 @@ int main() {
 			void* input_pointer = &readyBuffer;
 
 			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
+
+			if (readyBuffer.timestamp_seconds > focus_change_time.tv_sec || (readyBuffer.timestamp_seconds == focus_change_time.tv_sec && readyBuffer.timestamp_microseconds > (focus_change_time.tv_nsec + 500)/1000)) {
+				if (cr_needed) {
+					std::cout << "!" << std::endl;
+					cr_needed = false;
+				}
+			}
+			if (cr_needed) {
+				continue;
+			}
+
 
         uint32_t index = readyBuffer.index;
 		#ifdef USE_OPENCV
@@ -252,29 +276,33 @@ int main() {
 			}
 		}
 		detector.addFocusMeasurementResult(focus_sum);
-		if (readyBuffer.timestamp_seconds > focus_change_time.tv_sec || (readyBuffer.timestamp_seconds == focus_change_time.tv_sec && readyBuffer.timestamp_microseconds > (focus_change_time.tv_nsec + 500)/1000)) {
-			if (cr_needed) {
-				std::cout << std::endl;
-				cr_needed = false;
-			}
-		}
+
 		std::cout << focus_sum << ",";
 		if (detector.isFocusStabilised()) {
+			if (iteration_number >= 2 && iteration_number %2 == 0) {
+				indexOfMaximumFromZero = detector.getMaximumValueIndex();
+			}
+			if (iteration_number >= 3 && iteration_number %2 != 0) {
+				size_t indexOfMaximumFromMax = detector.getMaximumValueIndex();
+//				std::cout << "Indexes " << indexOfMaximumFromZero/indexOfMaximumFromMax << std::endl;
+				std::cout << "Indexes " << indexOfMaximumFromZero << "-" << indexOfMaximumFromMax << std::endl;
+
+			}
+			iteration_number++;
 			cr_needed = true;
-			detector = FocusStabilizationDetector();
+			detector = FocusAnalyser();
 
 			uint8_t focus = get_focus_variable(deviceDescriptor);
 //			if (focus == 255) {
 //				break;
 //			}
-		    set_focus_variable(focus == 255 ? 0 : 255,deviceDescriptor);
+		    set_focus_variable(deviceDescriptor,focus == 255 ? 0 : 255);
 			clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
 
 //		    set_focus_variable(focus +1,deviceDescriptor);
 		}
 
 
-//		std::cout << "Focus sum = " << focus_sum << std::endl;
 
 		cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
 #endif
@@ -285,6 +313,17 @@ int main() {
 
 #ifdef USE_OPENCV
 		cv::imshow("input", output);
+//		static bool done = false;
+//		static bool done2 = false;
+//		if (!done) {
+//			cv::imshow("input", output);
+//			done = true;
+//		} else {
+//			if (!done2) {
+//				cv::imshow("input2", output);
+//				done2 = true;
+//			}
+//		}
 #endif
 
         struct v4l2_buffer buf;

@@ -3,7 +3,6 @@
 	<name>camera</name>
 	<comment></comment>
 	<projects>
-		<project>OpenCV-Release@opencv-release-eclipse-project</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

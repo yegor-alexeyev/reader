@@ -148,7 +148,6 @@ int main(int, char**) {
 		printf("Capture stream type is not supported");
 		return 1;
 	}
-//	set_absolute_exposure(9000,deviceDescriptor);
 
 	memset(&format, 0, sizeof(v4l2_format));
 	format.fmt.pix.width = CAMERA_FRAME_WIDTH;
@@ -163,8 +162,21 @@ int main(int, char**) {
 		return 1;
 	}
 
+//	set_exposure_auto_priority(deviceDescriptor,true);
+//	printf("Is exposure auto priority set = %u\n", is_exposure_auto_priority(deviceDescriptor));
+//
+	set_manual_exposure(deviceDescriptor,true);
+	printf("Is manual exposure set = %u\n", is_manual_exposure(deviceDescriptor));
+	set_absolute_exposure(30*10,deviceDescriptor);
+
 	set_auto_white_balance(deviceDescriptor,false);
 	printf("Is auto white balance set = %u\n", is_auto_white_balance_set(deviceDescriptor));
+
+	set_gain(deviceDescriptor,1);
+	printf("Gain set = %u\n", get_gain(deviceDescriptor));
+
+
+    printf("Focus value = %u\n", get_focus_variable(deviceDescriptor));
 
 	set_fps(deviceDescriptor,30);
 

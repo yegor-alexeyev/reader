@@ -3,7 +3,7 @@
 	<name>autofocus</name>
 	<comment></comment>
 	<projects>
-		<project>OpenCV-Debug@opencv-debug-eclipse-project</project>
+		<project>OpenCV-Release@opencv-release-eclipse-project</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

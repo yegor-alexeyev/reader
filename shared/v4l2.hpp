@@ -42,6 +42,27 @@ bool isStreamingIOSupported(int deviceDescriptor) {
 
 
 
+uint8_t get_gain( int deviceDescriptor) {
+	v4l2_control control {V4L2_CID_GAIN,0};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
+	assert(ret != -1);
+	assert(control.value >= 0 && control.value <= 0xFF);
+
+	return control.value;
+}
+
+
+
+void set_gain(int deviceDescriptor,uint8_t value) {
+	v4l2_control control {V4L2_CID_GAIN,value};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
+	assert(ret != -1);
+}
+
+
+
 
 
 
@@ -79,7 +100,7 @@ void set_fps( int deviceDescriptor, int fps) {
 
 
 
-void set_focus_variable(uint8_t value, int deviceDescriptor) {
+void set_focus_variable(int deviceDescriptor,uint8_t value) {
 	v4l2_control control {V4L2_CID_FOCUS_LOGITECH,value};
 
 //	printf("set focus value: %d\n", control.value);
@@ -103,11 +124,44 @@ bool is_auto_white_balance_set(int deviceDescriptor) {
 	return control.value != 0;
 }
 
-
 void set_absolute_exposure(uint16_t value, int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value};
 
 	printf("set absolute exposure: %d\n", control.value);
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
+	assert(ret != -1);
+}
+
+
+
+bool is_exposure_auto_priority( int deviceDescriptor) {
+	v4l2_control control {V4L2_CID_EXPOSURE_AUTO_PRIORITY,0};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
+	assert(ret != -1);
+	return control.value != 0;
+}
+
+void set_exposure_auto_priority( int deviceDescriptor, bool value) {
+	v4l2_control control {V4L2_CID_EXPOSURE_AUTO_PRIORITY,value ? 1 : 0};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
+	assert(ret != -1);
+}
+
+
+bool is_manual_exposure( int deviceDescriptor) {
+	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,0};
+
+	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
+	assert(ret != -1);
+	return control.value == V4L2_EXPOSURE_MANUAL;
+}
+
+
+void set_manual_exposure( int deviceDescriptor, bool value) {
+	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value ? V4L2_EXPOSURE_MANUAL : V4L2_EXPOSURE_APERTURE_PRIORITY};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);
