@@ -76,6 +76,9 @@ public:
 	{
 
 	}
+	size_t getMaximumValue() {
+		return maximumValue;
+	}
 
 
 	void addFocusMeasurementResult(uint32_t focusSum) {
@@ -271,8 +274,8 @@ int main() {
 		uint32_t focus_sum = 0;
 		for (uint32_t row = input.rows/3 +1; row < input.rows*2/3;row++) {
 			for (uint32_t column = input.cols/3 +1; column < input.cols*2/3;column++) {
-				focus_sum += abs(input.at<uint8_t>(cv::Point(column,row)) - input.at<uint8_t>(cv::Point(column,row-1)));
-				focus_sum += abs(input.at<uint8_t>(cv::Point(column,row)) - input.at<uint8_t>(cv::Point(column-1,row)));
+				focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column,row-1)) & 0xFF));
+				focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column-1,row)) & 0xFF));
 			}
 		}
 		detector.addFocusMeasurementResult(focus_sum);
