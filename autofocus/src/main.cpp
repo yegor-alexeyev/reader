@@ -15,6 +15,8 @@
 #include <string>
 #include <set>
 
+#include <signal.h>
+
 
 #include <iostream>
 #include <fcntl.h>
@@ -114,7 +116,23 @@ int getInitialDirection(int focusValue) {
 	return focusValue < 192 ? 255 : 0;
 }
 
+
+sig_atomic_t volatile running = 1;
+
+void termination_handler(int signal) {
+	running = 0;
+}
+
+
 int main() {
+	struct sigaction termination;
+	memset(&termination, 0, sizeof(struct sigaction));
+	termination.sa_handler = &termination_handler;
+	sigemptyset(&termination.sa_mask);
+	termination.sa_flags = 0;
+	sigaction(SIGTERM, &termination, NULL);
+
+
     int deviceDescriptor = open ("/dev/video0", O_RDWR /* required */ | O_NONBLOCK, 0);
     if (deviceDescriptor == -1) {
     	std::cout << "Unable to open device";
@@ -189,7 +207,7 @@ int main() {
 		return 1;
 	}
 	unsigned priority;
-	int count = 0;
+	size_t count = 0;
 
 	std::array<char,1024> mq_buffer;
 	FocusAnalyser detector;
@@ -199,7 +217,8 @@ int main() {
     size_t indexOfMaximumFromZero;
 	clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
 	bool cr_needed = false;
-	while (1) {
+
+	while (running == 1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 
@@ -212,9 +231,10 @@ int main() {
 //				boost::timer::auto_cpu_timer timer;
 				result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
 			}
+
 			if (result <= 0) {
 				perror("recvfrom");
-				exit(1);
+				break;
 			}
 	    	timespec tp;
 	    	clock_gettime(CLOCK_MONOTONIC,&tp);
@@ -222,6 +242,7 @@ int main() {
 			void* input_pointer = &readyBuffer;
 
 			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
+			count++;
 
 			if (readyBuffer.timestamp_seconds > focus_change_time.tv_sec || (readyBuffer.timestamp_seconds == focus_change_time.tv_sec && readyBuffer.timestamp_microseconds > (focus_change_time.tv_nsec + 500)/1000)) {
 				if (cr_needed) {
@@ -232,6 +253,7 @@ int main() {
 			if (cr_needed) {
 				continue;
 			}
+
 
 
         uint32_t index = readyBuffer.index;
@@ -342,7 +364,7 @@ int main() {
         }
 #endif
 	}
-//	std::cout << "count:" << count << std::endl;
+	std::cout << "count:" << count << std::endl;
 
 
 

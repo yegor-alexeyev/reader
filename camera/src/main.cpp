@@ -26,6 +26,7 @@
 #include "ipc.hpp"
 
 #include <array>
+#include <iostream>
 
 #include "BufferReference.h"
 
@@ -124,6 +125,7 @@ void termination_handler(int signal) {
 
 int main(int, char**) {
 
+	size_t count = 0;
 	struct sigaction termination;
 	memset(&termination, 0, sizeof(struct sigaction));
 	termination.sa_handler = &termination_handler;
@@ -236,6 +238,7 @@ int main(int, char**) {
 
 				default:
 					perror("VIDIOC_DQBUF");
+					exit(1);
 				}
 			}
 
@@ -269,6 +272,7 @@ int main(int, char**) {
 			   perror("sendto");
 			   exit(1);
 			}
+			count++;
 
 			counter++;
 		}
@@ -289,8 +293,11 @@ int main(int, char**) {
 			buffer.index = buffer_reference.index;
 			buffer.memory = V4L2_MEMORY_MMAP;
 
-			if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer))
+			if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer)) {
 				perror("VIDIOC_QBUF");
+				break;
+			}
+
 		}
 	}
 
@@ -304,6 +311,9 @@ int main(int, char**) {
 		perror("close");
 
 	close(announce_socket);
+
+	std::cout << "count:" << count << std::endl;
+
 
 	return 0;
 }
