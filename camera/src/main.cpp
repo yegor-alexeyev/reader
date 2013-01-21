@@ -103,8 +103,10 @@ void start_capturing(int deviceDescriptor,
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.index = mapped_buffer.index;
 
-		if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buf))
+		if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buf)) {
 			perror("VIDIOC_QBUF");
+			exit(1);
+		}
 	}
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
@@ -292,6 +294,7 @@ int main(int, char**) {
 			buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 			buffer.index = buffer_reference.index;
 			buffer.memory = V4L2_MEMORY_MMAP;
+			std::cout << buffer.index << " to free";
 
 			if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer)) {
 				perror("VIDIOC_QBUF");

@@ -250,113 +250,108 @@ int main() {
 					cr_needed = false;
 				}
 			}
-			if (cr_needed) {
-				continue;
-			}
+			#ifdef USE_OPENCV
+				cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
+			#endif
+
+			if (!cr_needed) {
 
 
+				uint32_t index = readyBuffer.index;
+		//    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
+		//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
 
-        uint32_t index = readyBuffer.index;
+				if (index >= buffers.size()) {
+					buffers.resize(index+1);
+				}
+
+		//TODO Finalize and test the dynamic change of the frame resolution functionality
+				FrameBuffer& savedBuffer = buffers[index];
+				if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
+					if (savedBuffer.pointer != nullptr) {
+						munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
+					}
+					void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
+								 PROT_READ,
+								 MAP_SHARED,
+								 deviceDescriptor, readyBuffer.offset);
+					if (pointer == MAP_FAILED) {
+						printf("mmap failed");
+						return 1;
+					}
+					savedBuffer.pointer = pointer;
+					savedBuffer.width = readyBuffer.width;
+					savedBuffer.height = readyBuffer.height;
+				}
+
+
+				int err  = errno;
 		#ifdef USE_OPENCV
-			cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
+				cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
+				uint32_t focus_sum = 0;
+				for (uint32_t row = input.rows/3 +1; row < input.rows*2/3;row++) {
+					for (uint32_t column = input.cols/3 +1; column < input.cols*2/3;column++) {
+						focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column,row-1)) & 0xFF));
+						focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column-1,row)) & 0xFF));
+					}
+				}
+				detector.addFocusMeasurementResult(focus_sum);
+
+				std::cout << focus_sum << ",";
+				if (detector.isFocusStabilised()) {
+					if (iteration_number >= 2 && iteration_number %2 == 0) {
+						indexOfMaximumFromZero = detector.getMaximumValueIndex();
+					}
+					if (iteration_number >= 3 && iteration_number %2 != 0) {
+						size_t indexOfMaximumFromMax = detector.getMaximumValueIndex();
+		//				std::cout << "Indexes " << indexOfMaximumFromZero/indexOfMaximumFromMax << std::endl;
+						std::cout << "Indexes " << indexOfMaximumFromZero << "-" << indexOfMaximumFromMax << std::endl;
+
+					}
+					iteration_number++;
+					cr_needed = true;
+					detector = FocusAnalyser();
+
+					uint8_t focus = get_focus_variable(deviceDescriptor);
+		//			if (focus == 255) {
+		//				break;
+		//			}
+					set_focus_variable(deviceDescriptor,focus == 255 ? 0 : 255);
+					clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
+
+		//		    set_focus_variable(focus +1,deviceDescriptor);
+				}
+
+
+
+				cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
+		#endif
+		}
+
+				asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,mq_buffer.data(),mq_buffer.size());
+
+				mq_send(released_frames_mq,mq_buffer.data(),encode_result.encoded,0);
+
+		#ifdef USE_OPENCV
+				cv::imshow("input", output);
+		//		static bool done = false;
+		//		static bool done2 = false;
+		//		if (!done) {
+		//			cv::imshow("input", output);
+		//			done = true;
+		//		} else {
+		//			if (!done2) {
+		//				cv::imshow("input2", output);
+		//				done2 = true;
+		//			}
+		//		}
 		#endif
 
-
-
-//    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
-//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
-
-        if (index >= buffers.size()) {
-        	buffers.resize(index+1);
-        }
-
-//TODO Finalize and test the dynamic change of the frame resolution functionality
-        FrameBuffer& savedBuffer = buffers[index];
-        if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
-        	if (savedBuffer.pointer != nullptr) {
-    			munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
-        	}
-        	void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
-        				 PROT_READ,
-        				 MAP_SHARED,
-        				 deviceDescriptor, readyBuffer.offset);
-        	if (pointer == MAP_FAILED) {
-        		printf("mmap failed");
-        		return 1;
-        	}
-        	savedBuffer.pointer = pointer;
-        	savedBuffer.width = readyBuffer.width;
-        	savedBuffer.height = readyBuffer.height;
-        }
-
-
-		int err  = errno;
-#ifdef USE_OPENCV
-		cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
-		uint32_t focus_sum = 0;
-		for (uint32_t row = input.rows/3 +1; row < input.rows*2/3;row++) {
-			for (uint32_t column = input.cols/3 +1; column < input.cols*2/3;column++) {
-				focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column,row-1)) & 0xFF));
-				focus_sum += abs((input.at<uint16_t>(cv::Point(column,row)) & 0xFF) - (input.at<uint16_t>(cv::Point(column-1,row)) & 0xFF));
-			}
-		}
-		detector.addFocusMeasurementResult(focus_sum);
-
-		std::cout << focus_sum << ",";
-		if (detector.isFocusStabilised()) {
-			if (iteration_number >= 2 && iteration_number %2 == 0) {
-				indexOfMaximumFromZero = detector.getMaximumValueIndex();
-			}
-			if (iteration_number >= 3 && iteration_number %2 != 0) {
-				size_t indexOfMaximumFromMax = detector.getMaximumValueIndex();
-//				std::cout << "Indexes " << indexOfMaximumFromZero/indexOfMaximumFromMax << std::endl;
-				std::cout << "Indexes " << indexOfMaximumFromZero << "-" << indexOfMaximumFromMax << std::endl;
-
-			}
-			iteration_number++;
-			cr_needed = true;
-			detector = FocusAnalyser();
-
-			uint8_t focus = get_focus_variable(deviceDescriptor);
-//			if (focus == 255) {
-//				break;
-//			}
-		    set_focus_variable(deviceDescriptor,focus == 255 ? 0 : 255);
-			clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
-
-//		    set_focus_variable(focus +1,deviceDescriptor);
-		}
-
-
-
-		cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
-#endif
-
-		asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,mq_buffer.data(),mq_buffer.size());
-
-		mq_send(released_frames_mq,mq_buffer.data(),encode_result.encoded,0);
-
-#ifdef USE_OPENCV
-		cv::imshow("input", output);
-//		static bool done = false;
-//		static bool done2 = false;
-//		if (!done) {
-//			cv::imshow("input", output);
-//			done = true;
-//		} else {
-//			if (!done2) {
-//				cv::imshow("input2", output);
-//				done2 = true;
-//			}
-//		}
-#endif
-
-        struct v4l2_buffer buf;
-        memset(&buf,0,sizeof(buf));
-
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.index = index;
-
+//				struct v4l2_buffer buf;
+//				memset(&buf,0,sizeof(buf));
+//
+//				buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//				buf.index = index;
 
 #ifdef USE_OPENCV
         if(int key = cv::waitKey(1) >= 0) {
