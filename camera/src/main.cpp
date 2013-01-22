@@ -31,7 +31,6 @@
 #include "BufferReference.h"
 
 struct frame_buffer {
-	void* start_address;
 	size_t length;
 	int index;
 };
@@ -78,14 +77,7 @@ std::vector<frame_buffer> map_buffers(int deviceDescriptor) {
 		}
 
 		mapped_buffer.index = buffer.index;
-		mapped_buffer.length = buffer.length;
-		mapped_buffer.start_address = mmap(NULL, buffer.length, PROT_READ,
-				MAP_SHARED, deviceDescriptor, buffer.m.offset);
-
-		if (MAP_FAILED == mapped_buffer.start_address) {
-			perror("mmap");
-			exit(EXIT_FAILURE);
-		}
+		mapped_buffer.length = buffer.length;\
 	}
 
 	return buffers;
@@ -111,12 +103,6 @@ void start_capturing(int deviceDescriptor,
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
 		perror("VIDIOC_STREAMON");
-}
-
-void unmap_buffers(std::vector<frame_buffer> buffers) {
-	for (frame_buffer buffer : buffers) {
-		munmap(buffer.start_address, buffer.length);
-	}
 }
 
 sig_atomic_t volatile running = 1;
@@ -307,8 +293,6 @@ int main(int, char**) {
 	v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMOFF, &type))
 		perror("VIDIOC_STREAMOFF");
-
-	unmap_buffers(buffers);
 
 	if (-1 == close(deviceDescriptor))
 		perror("close");
