@@ -38,6 +38,8 @@ struct frame_buffer {
 const uint32_t CAMERA_FRAME_WIDTH = 640;
 const uint32_t CAMERA_FRAME_HEIGHT = 480;
 
+
+
 std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
