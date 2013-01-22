@@ -38,7 +38,7 @@ struct frame_buffer {
 const uint32_t CAMERA_FRAME_WIDTH = 640;
 const uint32_t CAMERA_FRAME_HEIGHT = 480;
 
-std::vector<frame_buffer> map_buffers(int deviceDescriptor) {
+std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
 	memset(&reqbuf, 0, sizeof(reqbuf));
@@ -171,7 +171,7 @@ int main(int, char**) {
 	set_fps(deviceDescriptor,30);
 
 
-	std::vector<frame_buffer> buffers = map_buffers(deviceDescriptor);
+	std::vector<frame_buffer> buffers = request_buffers(deviceDescriptor);
 	start_capturing(deviceDescriptor, buffers);
 
 
