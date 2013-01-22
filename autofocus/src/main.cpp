@@ -36,13 +36,14 @@
 
 #include <boost/timer/timer.hpp>
 
-#include <boost/circular_buffer.hpp>
 
 #include <array>
 
 #include "libv4lconvert.h"
 
 #include "BufferReference.h"
+
+#include "FocusAnalyser.h"
 
 void fillWithLumaFromYUY2(uint8_t yuy2[],size_t width,size_t height,uint8_t luma[]) {
 	for (size_t row = 0; row < height; row++) {
@@ -60,55 +61,6 @@ struct FrameBuffer {
 	size_t height;
 };
 
-
-class FocusAnalyser {
-private:
-	boost::circular_buffer<uint32_t> history;
-	size_t stabiliseCount;
-	size_t measurementCount;
-	uint32_t maximumValue;
-	size_t maximumValueIndex;
-public:
-	FocusAnalyser() :
-		history(2),
-		stabiliseCount(0),
-		measurementCount(0),
-		maximumValue(0),
-		maximumValueIndex(0)
-	{
-
-	}
-	size_t getMaximumValue() {
-		return maximumValue;
-	}
-
-
-	void addFocusMeasurementResult(uint32_t focusSum) {
-		if (measurementCount >= 5) {
-			if ((history[0] == history[1] && history[1] == focusSum) ||
-					(history[0] < history[1] && history[1] > focusSum) ||
-					(history[0] > history[1] && history[1] < focusSum)) {
-				stabiliseCount++;
-			} else {
-				stabiliseCount= 0;
-			}
-		}
-		history.push_back(focusSum);
-		measurementCount++;
-		if (maximumValue < focusSum) {
-			maximumValueIndex = measurementCount;
-			maximumValue = focusSum;
-		}
-	}
-
-	size_t getMaximumValueIndex() {
-		return maximumValueIndex;
-	}
-
-	bool isFocusStabilised() {
-		return stabiliseCount >= 3;
-	}
-};
 
 
 
