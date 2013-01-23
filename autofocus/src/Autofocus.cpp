@@ -25,6 +25,16 @@ bool is_first_timestamp_later(timeval first, timespec second) {
 		|| (first.tv_sec == second.tv_sec && first.tv_usec > (second.tv_nsec/1000 + 500));
 }
 
+Autofocus::Autofocus(int deviceDescriptor) :
+		deviceDescriptor(deviceDescriptor) {
+	setFocus(0);
+}
+
+void Autofocus::setFocus(uint8_t focusValue) {
+    set_focus_variable(deviceDescriptor,focusValue);
+	clock_gettime(CLOCK_MONOTONIC, &focus_change_time);
+}
+
 void Autofocus::submitFrame(const timeval& timestamp,
 		const yuy2::c_view_t& frame) {
 	if (is_first_timestamp_later(timestamp,focus_change_time)) {
@@ -35,26 +45,28 @@ void Autofocus::submitFrame(const timeval& timestamp,
 //		std::cout << focus_sum;
 
 		if (detector.isFocusStabilised()) {
-			if (iteration_number >= 2 && iteration_number % 2 == 0) {
+			if (iteration_number <= 2) {
 				indexOfMaximumFromZero = detector.getMaximumValueIndex();
+				uint8_t focus = get_focus_variable(deviceDescriptor);
+				setFocus(focus == 255 ? 0 : 255);
 			}
-			if (iteration_number >= 3 && iteration_number % 2 != 0) {
+			if (iteration_number == 3) {
 				size_t indexOfMaximumFromMax = detector.getMaximumValueIndex();
 				//				std::cout << "Indexes " << indexOfMaximumFromZero/indexOfMaximumFromMax << std::endl;
+				uint8_t newFocusValue = 255*indexOfMaximumFromZero/(indexOfMaximumFromZero+indexOfMaximumFromMax);
 				std::cout << "Indexes " << indexOfMaximumFromZero << "-"
-						<< indexOfMaximumFromMax << std::endl;
-
+						<< indexOfMaximumFromMax << " New value = " << (int)newFocusValue << std::endl;
+				setFocus(newFocusValue);
 			}
 			iteration_number++;
-//			cr_needed = true;
 			detector = FocusAnalyser();
 
-			uint8_t focus = get_focus_variable(deviceDescriptor);
+//			uint8_t focus = get_focus_variable(deviceDescriptor);
 			//			if (focus == 255) {
 			//				break;
 			//			}
-			set_focus_variable(deviceDescriptor, focus == 255 ? 0 : 255);
-			clock_gettime(CLOCK_MONOTONIC, &focus_change_time);
+//			set_focus_variable(deviceDescriptor, focus == 255 ? 0 : 255);
+//			clock_gettime(CLOCK_MONOTONIC, &focus_change_time);
 
 			//		    set_focus_variable(focus +1,deviceDescriptor);
 		}

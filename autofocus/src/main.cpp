@@ -155,7 +155,6 @@ int main() {
 	size_t count = 0;
 
 	std::array<char,1024> mq_buffer;
-    set_focus_variable(deviceDescriptor,0);
 
 	Autofocus autofocus(deviceDescriptor);
 	while (running == 1) {

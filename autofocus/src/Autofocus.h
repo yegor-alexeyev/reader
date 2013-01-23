@@ -21,14 +21,10 @@ class Autofocus {
     int deviceDescriptor;
 
 public:
-	Autofocus(int deviceDescriptor) :
-		deviceDescriptor(deviceDescriptor){
-
-		clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
-	}
+	Autofocus(int deviceDescriptor);
+	void setFocus(uint8_t focusValue);
 	void submitFrame(const timeval& timestamp, const yuy2::c_view_t& frame);
 
 };
-
 
 #endif /* AUTOFOCUS_H_ */
