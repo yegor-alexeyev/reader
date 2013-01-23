@@ -32,6 +32,16 @@ bool isLogitechAutofocusModeSupported(int deviceDescriptor) {
 
 }
 
+bool isControlSupported(int deviceDescriptor, int cid) {
+	v4l2_queryctrl queryctrl;
+	memset (&(queryctrl), 0, sizeof (queryctrl));
+
+	queryctrl.id = cid;
+	return xioctl(deviceDescriptor, VIDIOC_QUERYCTRL, &queryctrl) != -1;
+
+}
+
+
 bool isStreamingIOSupported(int deviceDescriptor) {
 	v4l2_capability queryctrl;
 	memset (&(queryctrl), 0, sizeof (queryctrl));

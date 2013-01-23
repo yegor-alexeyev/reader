@@ -154,6 +154,9 @@ int main(int, char**) {
 		return 1;
 	}
 
+	std::cout << "Absolute focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_ABSOLUTE) << std::endl;
+	std::cout << "Relative focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_RELATIVE) << std::endl;
+
 //	set_exposure_auto_priority(deviceDescriptor,true);
 //	printf("Is exposure auto priority set = %u\n", is_exposure_auto_priority(deviceDescriptor));
 //
