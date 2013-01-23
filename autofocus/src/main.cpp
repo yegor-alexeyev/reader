@@ -35,7 +35,6 @@
 #include <arpa/inet.h>
 
 #include <boost/timer/timer.hpp>
-#include <boost/gil/gil_all.hpp>
 
 
 #include <array>

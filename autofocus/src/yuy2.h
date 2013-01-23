@@ -7,6 +7,8 @@
 
 #ifndef YUY2_H_
 #define YUY2_H_
+#include <boost/gil/gil_all.hpp>
+
 
 namespace yuy2 {
 	struct luma_t {};
