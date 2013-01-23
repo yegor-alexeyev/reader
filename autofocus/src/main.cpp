@@ -8,8 +8,6 @@
 #include <libv4l2.h>
 
 #include <libv4l2.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
 #include <linux/videodev2.h>
 
 #include <string>
@@ -19,7 +17,6 @@
 
 
 #include <iostream>
-#include <fcntl.h>
 #include <sys/mman.h>
 #include <mqueue.h>
 #include <errno.h>
@@ -43,7 +40,7 @@
 
 #include "BufferReference.h"
 
-#include "FocusAnalyser.h"
+#include "Autofocus.h"
 #include "yuy2.h"
 
 
@@ -78,17 +75,6 @@ void termination_handler(int signal) {
 	running = 0;
 }
 
-uint32_t calculate_focus_sum(yuy2::view_t view) {
-	uint32_t focus_sum = 0;
-	for (uint32_t row = view.height()/3 +1; row < view.height()*2/3;row++) {
-		for (uint32_t column = view.width()/3 +1; column < view.width()*2/3;column++) {
-			focus_sum += abs(boost::gil::get_color(*view.at(column,row),yuy2::luma_t()) - boost::gil::get_color(*view.at(column,row - 1),yuy2::luma_t()));
-			focus_sum += abs(boost::gil::get_color(*view.at(column,row),yuy2::luma_t()) - boost::gil::get_color(*view.at(column - 1,row),yuy2::luma_t()));
-		}
-	}
-	return focus_sum;
-}
-
 
 int main() {
 	struct sigaction termination;
@@ -110,19 +96,12 @@ int main() {
     cv::namedWindow("input",1);
 #endif
 
-
-//	std::vector<uint8_t> iminput(width*height*3);
-
     int bpp = 1;
 
     bool isAutofocusAvailable = isLogitechAutofocusModeSupported(deviceDescriptor);
 
-
-
-
     if (isAutofocusAvailable) {
     }
-
 
     int announce_socket;
     in_addr iaddr;
@@ -176,147 +155,81 @@ int main() {
 	size_t count = 0;
 
 	std::array<char,1024> mq_buffer;
-	FocusAnalyser detector;
-	timespec focus_change_time;
     set_focus_variable(deviceDescriptor,0);
-    int iteration_number = 1;
-    size_t indexOfMaximumFromZero;
-	clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
-	bool cr_needed = false;
 
+	Autofocus autofocus(deviceDescriptor);
 	while (running == 1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 
-			std::vector<char> data(attr.mq_msgsize+1);
+		std::vector<char> data(attr.mq_msgsize+1);
 
-			msghdr socket_message;
-			memset(&socket_message,0,sizeof(socket_message));
-			int result;
-			{
+		msghdr socket_message;
+		memset(&socket_message,0,sizeof(socket_message));
+		int result;
+		{
 //				boost::timer::auto_cpu_timer timer;
-				result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
-			}
-
-			if (result <= 0) {
-				perror("recvfrom");
-				break;
-			}
-	    	timespec tp;
-	    	clock_gettime(CLOCK_MONOTONIC,&tp);
-
-			void* input_pointer = &readyBuffer;
-
-			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
-			count++;
-
-			if (readyBuffer.timestamp_seconds > focus_change_time.tv_sec || (readyBuffer.timestamp_seconds == focus_change_time.tv_sec && readyBuffer.timestamp_microseconds > (focus_change_time.tv_nsec + 500)/1000)) {
-				if (cr_needed) {
-					std::cout << "!" << std::endl;
-					cr_needed = false;
-				}
-			}
-			#ifdef USE_OPENCV
-				cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
-			#endif
-
-			if (!cr_needed) {
-
-
-				uint32_t index = readyBuffer.index;
-		//    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
-		//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
-
-				if (index >= buffers.size()) {
-					buffers.resize(index+1);
-				}
-
-		//TODO Finalize and test the dynamic change of the frame resolution functionality
-				FrameBuffer& savedBuffer = buffers[index];
-				if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
-					if (savedBuffer.pointer != nullptr) {
-						munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
-					}
-					void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
-								 PROT_READ,
-								 MAP_SHARED,
-								 deviceDescriptor, readyBuffer.offset);
-					if (pointer == MAP_FAILED) {
-						printf("mmap failed");
-						return 1;
-					}
-					savedBuffer.pointer = pointer;
-					savedBuffer.width = readyBuffer.width;
-					savedBuffer.height = readyBuffer.height;
-				}
-
-
-				int err  = errno;
-		#ifdef USE_OPENCV
-				cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
-
-				yuy2::view_t view = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(savedBuffer.pointer),readyBuffer.width*2);
-
-				uint32_t focus_sum = calculate_focus_sum(view);
-				detector.addFocusMeasurementResult(focus_sum);
-
-				std::cout << focus_sum << ",";
-				if (detector.isFocusStabilised()) {
-					if (iteration_number >= 2 && iteration_number %2 == 0) {
-						indexOfMaximumFromZero = detector.getMaximumValueIndex();
-					}
-					if (iteration_number >= 3 && iteration_number %2 != 0) {
-						size_t indexOfMaximumFromMax = detector.getMaximumValueIndex();
-		//				std::cout << "Indexes " << indexOfMaximumFromZero/indexOfMaximumFromMax << std::endl;
-						std::cout << "Indexes " << indexOfMaximumFromZero << "-" << indexOfMaximumFromMax << std::endl;
-
-					}
-					iteration_number++;
-					cr_needed = true;
-					detector = FocusAnalyser();
-
-					uint8_t focus = get_focus_variable(deviceDescriptor);
-		//			if (focus == 255) {
-		//				break;
-		//			}
-					set_focus_variable(deviceDescriptor,focus == 255 ? 0 : 255);
-					clock_gettime(CLOCK_MONOTONIC,&focus_change_time);
-
-		//		    set_focus_variable(focus +1,deviceDescriptor);
-				}
-
-
-
-				cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
-		#endif
+			result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
 		}
+
+		if (result <= 0) {
+			perror("recvfrom");
+			break;
+		}
+		timespec tp;
+		clock_gettime(CLOCK_MONOTONIC,&tp);
+
+		void* input_pointer = &readyBuffer;
+
+		ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
+
+		uint32_t index = readyBuffer.index;
+//    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
+//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
+
+		if (index >= buffers.size()) {
+			buffers.resize(index+1);
+		}
+
+//TODO Finalize and test the dynamic change of the frame resolution functionality
+		FrameBuffer& savedBuffer = buffers[index];
+		if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
+			if (savedBuffer.pointer != nullptr) {
+				munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
+			}
+			void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
+						 PROT_READ,
+						 MAP_SHARED,
+						 deviceDescriptor, readyBuffer.offset);
+			if (pointer == MAP_FAILED) {
+				printf("mmap failed");
+				return 1;
+			}
+			savedBuffer.pointer = pointer;
+			savedBuffer.width = readyBuffer.width;
+			savedBuffer.height = readyBuffer.height;
+		}
+
+		timeval frame_timestamp {readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
+		yuy2::view_t frame = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(savedBuffer.pointer),readyBuffer.width*2);
+
+		autofocus.submitFrame(frame_timestamp, frame);
+		count++;
+
+
+		#ifdef USE_OPENCV
+			cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
+			cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
+
+			cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
+		#endif
 
 				asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,mq_buffer.data(),mq_buffer.size());
 
 				mq_send(released_frames_mq,mq_buffer.data(),encode_result.encoded,0);
 
-		#ifdef USE_OPENCV
-				cv::imshow("input", output);
-		//		static bool done = false;
-		//		static bool done2 = false;
-		//		if (!done) {
-		//			cv::imshow("input", output);
-		//			done = true;
-		//		} else {
-		//			if (!done2) {
-		//				cv::imshow("input2", output);
-		//				done2 = true;
-		//			}
-		//		}
-		#endif
-
-//				struct v4l2_buffer buf;
-//				memset(&buf,0,sizeof(buf));
-//
-//				buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//				buf.index = index;
-
 #ifdef USE_OPENCV
+		cv::imshow("input", output);
         if(int key = cv::waitKey(1) >= 0) {
         	break;
         }

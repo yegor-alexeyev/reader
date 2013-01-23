@@ -3,6 +3,10 @@
 
 #include <libv4l2.h>
 
+#include <sys/ioctl.h>
+#include <errno.h>
+
+
 #include <linux/videodev2.h>
 
 
@@ -23,7 +27,7 @@ static int xioctl(int fh, int request, void *arg)
         return r;
 }
 
-bool isLogitechAutofocusModeSupported(int deviceDescriptor) {
+inline bool isLogitechAutofocusModeSupported(int deviceDescriptor) {
 	v4l2_queryctrl queryctrl;
 	memset (&(queryctrl), 0, sizeof (queryctrl));
 
@@ -32,7 +36,7 @@ bool isLogitechAutofocusModeSupported(int deviceDescriptor) {
 
 }
 
-bool isControlSupported(int deviceDescriptor, int cid) {
+inline bool isControlSupported(int deviceDescriptor, int cid) {
 	v4l2_queryctrl queryctrl;
 	memset (&(queryctrl), 0, sizeof (queryctrl));
 
@@ -42,7 +46,7 @@ bool isControlSupported(int deviceDescriptor, int cid) {
 }
 
 
-bool isStreamingIOSupported(int deviceDescriptor) {
+inline bool isStreamingIOSupported(int deviceDescriptor) {
 	v4l2_capability queryctrl;
 	memset (&(queryctrl), 0, sizeof (queryctrl));
 
@@ -52,7 +56,7 @@ bool isStreamingIOSupported(int deviceDescriptor) {
 
 
 
-uint8_t get_gain( int deviceDescriptor) {
+inline uint8_t get_gain( int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_GAIN,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
@@ -64,7 +68,7 @@ uint8_t get_gain( int deviceDescriptor) {
 
 
 
-void set_gain(int deviceDescriptor,uint8_t value) {
+inline void set_gain(int deviceDescriptor,uint8_t value) {
 	v4l2_control control {V4L2_CID_GAIN,value};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
@@ -76,7 +80,7 @@ void set_gain(int deviceDescriptor,uint8_t value) {
 
 
 
-uint8_t get_focus_variable( int deviceDescriptor) {
+inline uint8_t get_focus_variable( int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_FOCUS_LOGITECH,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
@@ -89,7 +93,7 @@ uint8_t get_focus_variable( int deviceDescriptor) {
 }
 
 
-void set_fps( int deviceDescriptor, int fps) {
+inline void set_fps( int deviceDescriptor, int fps) {
 
 	v4l2_streamparm streamparm;
 	memset(&streamparm,0,sizeof(streamparm));
@@ -110,7 +114,7 @@ void set_fps( int deviceDescriptor, int fps) {
 
 
 
-void set_focus_variable(int deviceDescriptor,uint8_t value) {
+inline void set_focus_variable(int deviceDescriptor,uint8_t value) {
 	v4l2_control control {V4L2_CID_FOCUS_LOGITECH,value};
 
 //	printf("set focus value: %d\n", control.value);
@@ -119,14 +123,14 @@ void set_focus_variable(int deviceDescriptor,uint8_t value) {
 	assert(ret != -1);
 }
 
-void set_auto_white_balance(int deviceDescriptor, bool value) {
+inline void set_auto_white_balance(int deviceDescriptor, bool value) {
 	v4l2_control control {V4L2_CID_AUTO_WHITE_BALANCE,value ? 1 : 0};
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);
 }
 
 
-bool is_auto_white_balance_set(int deviceDescriptor) {
+inline bool is_auto_white_balance_set(int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_AUTO_WHITE_BALANCE,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
@@ -134,7 +138,7 @@ bool is_auto_white_balance_set(int deviceDescriptor) {
 	return control.value != 0;
 }
 
-void set_absolute_exposure(uint16_t value, int deviceDescriptor) {
+inline void set_absolute_exposure(uint16_t value, int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value};
 
 	printf("set absolute exposure: %d\n", control.value);
@@ -145,7 +149,7 @@ void set_absolute_exposure(uint16_t value, int deviceDescriptor) {
 
 
 
-bool is_exposure_auto_priority( int deviceDescriptor) {
+inline bool is_exposure_auto_priority( int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_EXPOSURE_AUTO_PRIORITY,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
@@ -153,7 +157,7 @@ bool is_exposure_auto_priority( int deviceDescriptor) {
 	return control.value != 0;
 }
 
-void set_exposure_auto_priority( int deviceDescriptor, bool value) {
+inline void set_exposure_auto_priority( int deviceDescriptor, bool value) {
 	v4l2_control control {V4L2_CID_EXPOSURE_AUTO_PRIORITY,value ? 1 : 0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
@@ -161,7 +165,7 @@ void set_exposure_auto_priority( int deviceDescriptor, bool value) {
 }
 
 
-bool is_manual_exposure( int deviceDescriptor) {
+inline bool is_manual_exposure( int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
@@ -170,7 +174,7 @@ bool is_manual_exposure( int deviceDescriptor) {
 }
 
 
-void set_manual_exposure( int deviceDescriptor, bool value) {
+inline void set_manual_exposure( int deviceDescriptor, bool value) {
 	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value ? V4L2_EXPOSURE_MANUAL : V4L2_EXPOSURE_APERTURE_PRIORITY};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
@@ -178,26 +182,12 @@ void set_manual_exposure( int deviceDescriptor, bool value) {
 }
 
 
-void disable_output_processing( int deviceDescriptor) {
+inline void disable_output_processing( int deviceDescriptor) {
 	v4l2_control control {V4L2_CID_DISABLE_PROCESSING_LOGITECH ,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);
 }
-
-
-//
-//v4l2_fmtdesc fmtdesc;
-//fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-//fmtdesc.index = 0;
-//while (true) {
-//	ret = ioctl(	deviceDescriptor, VIDIOC_ENUM_FMT, &fmtdesc);
-//	if (ret == -1) {
-//		printf("Done");
-//		return 1;
-//	}
-//	fmtdesc.index++;
-//}
 
 
 #endif /* V4L2_HPP_ */
