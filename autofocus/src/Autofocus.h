@@ -15,7 +15,6 @@
 
 class Autofocus {
 	timespec focus_change_time;
-	bool cr_needed = false;
 	FocusAnalyser detector;
     int iteration_number = 1;
     size_t indexOfMaximumFromZero;

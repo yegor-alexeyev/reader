@@ -20,22 +20,20 @@ uint32_t calculate_focus_sum(const yuy2::c_view_t& view) {
 	return focus_sum;
 }
 
+bool is_first_timestamp_later(timeval first, timespec second) {
+	return first.tv_sec > second.tv_sec
+		|| (first.tv_sec == second.tv_sec && first.tv_usec > (second.tv_nsec/1000 + 500));
+}
+
 void Autofocus::submitFrame(const timeval& timestamp,
 		const yuy2::c_view_t& frame) {
-	if (timestamp.tv_sec > focus_change_time.tv_sec
-			|| (timestamp.tv_sec == focus_change_time.tv_sec
-					&& timestamp.tv_usec > (focus_change_time.tv_nsec/1000 + 500))) {
-		if (cr_needed) {
-			std::cout << "!" << std::endl;
-			cr_needed = false;
-		}
-	}
-	if (!cr_needed) {
+	if (is_first_timestamp_later(timestamp,focus_change_time)) {
 
 		uint32_t focus_sum = calculate_focus_sum(frame);
 		detector.addFocusMeasurementResult(focus_sum);
 
-		std::cout << focus_sum << ",";
+//		std::cout << focus_sum;
+
 		if (detector.isFocusStabilised()) {
 			if (iteration_number >= 2 && iteration_number % 2 == 0) {
 				indexOfMaximumFromZero = detector.getMaximumValueIndex();
@@ -48,7 +46,7 @@ void Autofocus::submitFrame(const timeval& timestamp,
 
 			}
 			iteration_number++;
-			cr_needed = true;
+//			cr_needed = true;
 			detector = FocusAnalyser();
 
 			uint8_t focus = get_focus_variable(deviceDescriptor);
