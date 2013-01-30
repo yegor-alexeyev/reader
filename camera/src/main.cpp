@@ -30,6 +30,8 @@
 
 #include "BufferReference.h"
 
+#include <boost/timer/timer.hpp>
+
 struct frame_buffer {
 	size_t length;
 	int index;
@@ -79,7 +81,8 @@ std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 		}
 
 		mapped_buffer.index = buffer.index;
-		mapped_buffer.length = buffer.length;\
+		mapped_buffer.length = buffer.bytesused;
+
 	}
 
 	return buffers;
@@ -131,7 +134,7 @@ int main(int, char**) {
 	int deviceDescriptor = v4l2_open("/dev/video0",
 			O_RDWR /* required */| O_NONBLOCK, 0);
 	if (deviceDescriptor == -1) {
-		printf("Unable to open device");
+		printf("Unable to open device\n");
 		return 1;
 	}
 
@@ -229,6 +232,29 @@ int main(int, char**) {
 //			timespec tp;
 //			clock_gettime(CLOCK_MONOTONIC,&tp);
 
+			{
+				boost::timer::auto_cpu_timer benchmarker;
+			void* source_mapping = mmap (NULL, buf.bytesused,
+						 PROT_READ,
+						 MAP_SHARED,
+						 deviceDescriptor, buf.m.offset);
+			if (source_mapping == MAP_FAILED) {
+				printf("mmap failed");
+				return 1;
+			}
+
+			std::string file_name = "/video0" + std::to_string(buf.timestamp.tv_sec) + ":" + std::to_string(buf.timestamp.tv_usec);
+
+
+			int file_descriptor = shm_open(file_name.c_str(),O_RDWR | O_CREAT | O_EXCL,S_IRUSR | S_IRGRP | S_IROTH);
+
+			ftruncate(file_descriptor, buf.bytesused);
+			void* target_mapping = mmap(NULL, buf.bytesused,PROT_WRITE,MAP_SHARED,file_descriptor,0);
+
+			memcpy(target_mapping,source_mapping,buf.bytesused);
+
+			close(file_descriptor);
+			}
 
 			BufferReference readyBuffer;
 			readyBuffer.index = buf.index;

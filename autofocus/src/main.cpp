@@ -87,7 +87,7 @@ int main() {
 
     int deviceDescriptor = open ("/dev/video0", O_RDWR /* required */ | O_NONBLOCK, 0);
     if (deviceDescriptor == -1) {
-    	std::cout << "Unable to open device";
+    	std::cout << "Unable to open device\n";
     	return 1;
     }
 
