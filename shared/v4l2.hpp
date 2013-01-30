@@ -5,7 +5,7 @@
 
 #include <sys/ioctl.h>
 #include <errno.h>
-
+#include <stdexcept>
 
 #include <linux/videodev2.h>
 
@@ -189,5 +189,28 @@ inline void disable_output_processing( int deviceDescriptor) {
 	assert(ret != -1);
 }
 
+inline void setCameraStreamingFormat(int deviceDescriptor, size_t frameWidth, size_t frameHeight, __u32 pixelFormat) {
+	v4l2_format format;
+	memset(&format, 0, sizeof(v4l2_format));
+	format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	int ret = ioctl(deviceDescriptor, VIDIOC_G_FMT, &format);
+	if (ret == -1) {
+		throw std::runtime_error("Capture stream type is not supported");
+	}
+
+	memset(&format, 0, sizeof(v4l2_format));
+	format.fmt.pix.width = frameWidth;
+	format.fmt.pix.height = frameHeight;
+//	format.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+	format.fmt.pix.pixelformat = pixelFormat;
+
+	format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	ret = ioctl(deviceDescriptor, VIDIOC_S_FMT, &format);
+	if (ret == -1) {
+		throw std::runtime_error("Format is not supported");
+	}
+}
+
 
 #endif /* V4L2_HPP_ */
+

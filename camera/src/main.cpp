@@ -113,15 +113,20 @@ void termination_handler(int signal) {
 	running = 0;
 }
 
-int main(int, char**) {
-
-	size_t count = 0;
+void initialise_termination_handler() {
 	struct sigaction termination;
 	memset(&termination, 0, sizeof(struct sigaction));
 	termination.sa_handler = &termination_handler;
 	sigemptyset(&termination.sa_mask);
 	termination.sa_flags = 0;
 	sigaction(SIGTERM, &termination, NULL);
+}
+
+
+int main(int, char**) {
+	size_t count = 0;
+
+	initialise_termination_handler();
 
 	int deviceDescriptor = v4l2_open("/dev/video0",
 			O_RDWR /* required */| O_NONBLOCK, 0);
@@ -132,27 +137,9 @@ int main(int, char**) {
 
 //	disable_output_processing(deviceDescriptor);
 
-	v4l2_format format;
-	memset(&format, 0, sizeof(v4l2_format));
-	format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	int ret = ioctl(deviceDescriptor, VIDIOC_G_FMT, &format);
-	if (ret == -1) {
-		printf("Capture stream type is not supported");
-		return 1;
-	}
 
-	memset(&format, 0, sizeof(v4l2_format));
-	format.fmt.pix.width = CAMERA_FRAME_WIDTH;
-	format.fmt.pix.height = CAMERA_FRAME_HEIGHT;
-//	format.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+	setCameraStreamingFormat(deviceDescriptor, CAMERA_FRAME_WIDTH, CAMERA_FRAME_HEIGHT, V4L2_PIX_FMT_YUYV);
 
-	format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	ret = ioctl(deviceDescriptor, VIDIOC_S_FMT, &format);
-	if (ret == -1) {
-		printf("Format is not supported");
-		return 1;
-	}
 
 	std::cout << "Absolute focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_ABSOLUTE) << std::endl;
 	std::cout << "Relative focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_RELATIVE) << std::endl;
@@ -239,8 +226,8 @@ int main(int, char**) {
 			printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
 		//	printf("Real time: seconds = %ld, us = %ld\n", tp.tv_sec,tp.tv_nsec/1000);
 
-			timespec tp;
-			clock_gettime(CLOCK_MONOTONIC,&tp);
+//			timespec tp;
+//			clock_gettime(CLOCK_MONOTONIC,&tp);
 
 
 			BufferReference readyBuffer;
