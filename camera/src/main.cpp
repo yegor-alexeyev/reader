@@ -246,13 +246,14 @@ int main(int, char**) {
 			std::string file_name = "/video0" + std::to_string(buf.timestamp.tv_sec) + ":" + std::to_string(buf.timestamp.tv_usec);
 
 
-			int file_descriptor = shm_open(file_name.c_str(),O_RDWR | O_CREAT | O_EXCL,S_IRUSR | S_IRGRP | S_IROTH);
+			int file_descriptor = shm_open(file_name.c_str(),O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
 
 			ftruncate(file_descriptor, buf.bytesused);
 			void* target_mapping = mmap(NULL, buf.bytesused,PROT_WRITE,MAP_SHARED,file_descriptor,0);
 
 			memcpy(target_mapping,source_mapping,buf.bytesused);
 
+			fchmod(file_descriptor,S_IRUSR | S_IRGRP | S_IROTH);
 			close(file_descriptor);
 			}
 
