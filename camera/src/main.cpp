@@ -2,7 +2,6 @@
 #include <sys/stat.h>
 
 #include <signal.h>
-#include <mqueue.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -32,13 +31,47 @@
 
 #include <boost/timer/timer.hpp>
 
+#include <execinfo.h>
+
 struct frame_buffer {
 	size_t length;
-	int index;
+	void* pointer;
 };
 
 const uint32_t CAMERA_FRAME_WIDTH = 640;
 const uint32_t CAMERA_FRAME_HEIGHT = 480;
+
+
+std::string get_name_of_queued_buffer(__u32 buffer_index) {
+	return "video0-pending-" + std::to_string(buffer_index);
+}
+
+
+
+
+
+
+
+void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
+	std::string name = get_name_of_queued_buffer(buffer_index);
+	int file_descriptor = shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
+	if (file_descriptor == -1) {
+		throw std::runtime_error("shm_open fail. Unable to create " + name);
+	}
+
+	ftruncate(file_descriptor, buffer_length);
+	void* mapping = mmap(NULL, buffer_length,PROT_WRITE,MAP_SHARED,file_descriptor,0);
+
+	close(file_descriptor);
+	return mapping;
+}
+
+void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, __u32 buffer_length) {
+
+	void* mapping = prepare_frame_buffer(buffer_index, buffer_length);
+	queue_frame_buffer(deviceDescriptor, buffer_index,mapping,buffer_length);
+}
+
 
 
 
@@ -47,12 +80,12 @@ std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 
 	memset(&reqbuf, 0, sizeof(reqbuf));
 	reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	reqbuf.memory = V4L2_MEMORY_MMAP;
+	reqbuf.memory = V4L2_MEMORY_USERPTR;
 	reqbuf.count = 20;
 
 	if (-1 == ioctl(deviceDescriptor, VIDIOC_REQBUFS, &reqbuf)) {
 		if (errno == EINVAL)
-			printf("Video capturing or mmap-streaming is not supported\n");
+			printf("Video capturing or userptr-streaming is not supported\n");
 		else
 			perror("VIDIOC_REQBUFS");
 
@@ -68,21 +101,9 @@ std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 
 	for (size_t i = 0; i < reqbuf.count; i++) {
 		frame_buffer& mapped_buffer = buffers[i];
-		v4l2_buffer buffer;
 
-		memset(&buffer, 0, sizeof(buffer));
-		buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buffer.memory = V4L2_MEMORY_MMAP;
-		buffer.index = i;
-
-		if (-1 == ioctl(deviceDescriptor, VIDIOC_QUERYBUF, &buffer)) {
-			perror("VIDIOC_QUERYBUF");
-			exit(EXIT_FAILURE);
-		}
-
-		mapped_buffer.index = buffer.index;
-		mapped_buffer.length = buffer.bytesused;
-
+		mapped_buffer.length = CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2;
+		mapped_buffer.pointer = prepare_frame_buffer(i,mapped_buffer.length);
 	}
 
 	return buffers;
@@ -92,18 +113,10 @@ std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 void start_capturing(int deviceDescriptor,
 		const std::vector<frame_buffer>& mapped_buffers) {
 	enum v4l2_buf_type type;
-	for (const frame_buffer& mapped_buffer : mapped_buffers) {
-		v4l2_buffer buf;
+	for (size_t index = 0; index < mapped_buffers.size(); index++) {
+		const frame_buffer& mapped_buffer = mapped_buffers[index];
 
-		memset(&buf, 0, sizeof(buf));
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
-		buf.index = mapped_buffer.index;
-
-		if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buf)) {
-			perror("VIDIOC_QBUF");
-			exit(1);
-		}
+		queue_frame_buffer(deviceDescriptor,index,mapped_buffer.pointer,mapped_buffer.length);
 	}
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
@@ -126,7 +139,7 @@ void initialise_termination_handler() {
 }
 
 
-int main(int, char**) {
+void camera_server() {
 	size_t count = 0;
 
 	initialise_termination_handler();
@@ -134,14 +147,17 @@ int main(int, char**) {
 	int deviceDescriptor = v4l2_open("/dev/video0",
 			O_RDWR /* required */| O_NONBLOCK, 0);
 	if (deviceDescriptor == -1) {
-		printf("Unable to open device\n");
-		return 1;
+		throw std::runtime_error("Unable to open device");
 	}
 
 //	disable_output_processing(deviceDescriptor);
 
+	if (!isStreamingIOSupported(deviceDescriptor)) {
+		throw std::runtime_error("Streaming is not supported");
+	}
 
-	setCameraStreamingFormat(deviceDescriptor, CAMERA_FRAME_WIDTH, CAMERA_FRAME_HEIGHT, V4L2_PIX_FMT_YUYV);
+
+	setCameraOutputFormat(deviceDescriptor, CAMERA_FRAME_WIDTH, CAMERA_FRAME_HEIGHT, V4L2_PIX_FMT_YUYV);
 
 
 	std::cout << "Absolute focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_ABSOLUTE) << std::endl;
@@ -169,9 +185,6 @@ int main(int, char**) {
 	std::vector<frame_buffer> buffers = request_buffers(deviceDescriptor);
 	start_capturing(deviceDescriptor, buffers);
 
-
-	int released_frames_mq = mq_open("/video0-released-frames",
-			O_RDONLY | O_CREAT | O_NONBLOCK, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
 
 	unsigned int counter;
 
@@ -232,8 +245,7 @@ int main(int, char**) {
 //			timespec tp;
 //			clock_gettime(CLOCK_MONOTONIC,&tp);
 
-			{
-				boost::timer::auto_cpu_timer benchmarker;
+/*
 			void* source_mapping = mmap (NULL, buf.bytesused,
 						 PROT_READ,
 						 MAP_SHARED,
@@ -242,24 +254,23 @@ int main(int, char**) {
 				printf("mmap failed");
 				return 1;
 			}
+*/
+			{
+				std::string queued_buffer_name = get_name_of_queued_buffer(buf.index);
+				std::string dequeued_buffer_name = get_name_of_dequeued_buffer(buf.timestamp);
+				chmod(("/dev/shm/" + queued_buffer_name).c_str(),S_IRUSR | S_IRGRP | S_IROTH);
+				int ret = rename(("/dev/shm/" + queued_buffer_name).c_str(),("/dev/shm/" + dequeued_buffer_name).c_str());
+				if (ret == -1) {
+					throw std::runtime_error("Failed to rename file " + queued_buffer_name + " to " + dequeued_buffer_name);
+				}
 
-			std::string file_name = "/video0" + std::to_string(buf.timestamp.tv_sec) + ":" + std::to_string(buf.timestamp.tv_usec);
-
-
-			int file_descriptor = shm_open(file_name.c_str(),O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
-
-			ftruncate(file_descriptor, buf.bytesused);
-			void* target_mapping = mmap(NULL, buf.bytesused,PROT_WRITE,MAP_SHARED,file_descriptor,0);
-
-			memcpy(target_mapping,source_mapping,buf.bytesused);
-
-			fchmod(file_descriptor,S_IRUSR | S_IRGRP | S_IROTH);
-			close(file_descriptor);
 			}
+
+
 
 			BufferReference readyBuffer;
 			readyBuffer.index = buf.index;
-			readyBuffer.offset = buf.m.offset;
+			readyBuffer.offset = 0;
 			readyBuffer.size = buf.bytesused;
 		//DONE change back to frame timestamp
 //			readyBuffer.timestamp_seconds = tp.tv_sec;
@@ -282,29 +293,9 @@ int main(int, char**) {
 			count++;
 
 			counter++;
-		}
 
-		std::array<char,16384> message_buffer;
-		while (true) {
-			int result = mq_receive(released_frames_mq, message_buffer.data(),message_buffer.size(),NULL);
-			if (result == -1) {
-				break;
-			}
-			BufferReference buffer_reference;
-			memset(&buffer_reference,0,sizeof(BufferReference));
-			void* input_pointer = &buffer_reference;
-			ber_decode(0,&asn_DEF_BufferReference,&input_pointer,message_buffer.data(),result);
-			struct v4l2_buffer buffer;
-			memset(&buffer, 0, sizeof(buffer));
-			buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-			buffer.index = buffer_reference.index;
-			buffer.memory = V4L2_MEMORY_MMAP;
-			std::cout << buffer.index << " to free";
+			queueNextFrameBuffer(deviceDescriptor, buf.index, CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2);
 
-			if (-1 == xioctl(deviceDescriptor, VIDIOC_QBUF, &buffer)) {
-				perror("VIDIOC_QBUF");
-				break;
-			}
 
 		}
 	}
@@ -319,8 +310,27 @@ int main(int, char**) {
 	close(announce_socket);
 
 	std::cout << "count:" << count << std::endl;
+}
 
+int main(int, char**) {
+	try {
+		camera_server();
+	} catch (std::exception& exception) {
+		std::cerr << "Exception in the main thread: " << exception.what() << std::endl;
+		void *array[10];
+		size_t size;
+
+		// get void*'s for all entries on the stack
+		size = backtrace(array, 10);
+
+		// print out all the frames to stderr
+		backtrace_symbols_fd(array, size, 2);
+
+		return 1;
+	} catch (...) {
+		std::cerr << "Nonstandard exception in the main thread" << std::endl;
+		return 1;
+	}
 
 	return 0;
 }
-

@@ -51,7 +51,7 @@ inline bool isStreamingIOSupported(int deviceDescriptor) {
 	memset (&(queryctrl), 0, sizeof (queryctrl));
 
 	bool is_call_successfull = xioctl(deviceDescriptor, VIDIOC_QUERYCAP, &queryctrl) != -1;
-	return is_call_successfull && (queryctrl.capabilities & 0x04000000) != 0;
+	return is_call_successfull && (queryctrl.capabilities & V4L2_CAP_STREAMING) != 0;
 }
 
 
@@ -189,7 +189,7 @@ inline void disable_output_processing( int deviceDescriptor) {
 	assert(ret != -1);
 }
 
-inline void setCameraStreamingFormat(int deviceDescriptor, size_t frameWidth, size_t frameHeight, __u32 pixelFormat) {
+inline void setCameraOutputFormat(int deviceDescriptor, size_t frameWidth, size_t frameHeight, __u32 pixelFormat) {
 	v4l2_format format;
 	memset(&format, 0, sizeof(v4l2_format));
 	format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -211,6 +211,20 @@ inline void setCameraStreamingFormat(int deviceDescriptor, size_t frameWidth, si
 	}
 }
 
+inline void queue_frame_buffer(int device_descriptor, __u32 buffer_index, void* userptr, size_t buffer_length) {
+	v4l2_buffer buffer;
+	memset(&buffer, 0, sizeof(buffer));
+	buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buffer.memory = V4L2_MEMORY_USERPTR;
+	buffer.index = buffer_index;
+	buffer.m.userptr = reinterpret_cast<unsigned long>(userptr);
+	buffer.length = buffer_length;
+
+	if (-1 == xioctl(device_descriptor, VIDIOC_QBUF, &buffer)) {
+		perror("VIDIOC_QBUF");
+		throw std::runtime_error("VIDIOC_QBUF");
+	}
+}
 
 #endif /* V4L2_HPP_ */
 

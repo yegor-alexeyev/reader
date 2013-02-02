@@ -7,6 +7,8 @@
 #endif
 #include <libv4l2.h>
 
+#include <fcntl.h>
+
 #include <libv4l2.h>
 #include <linux/videodev2.h>
 
@@ -18,7 +20,6 @@
 
 #include <iostream>
 #include <sys/mman.h>
-#include <mqueue.h>
 #include <errno.h>
 #include <vector>
 #include <cstring>
@@ -136,36 +137,22 @@ int main() {
     }
 
 
-	int released_frames_mq = mq_open("/video0-released-frames",
-			O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO, NULL);
-	if (-1 == released_frames_mq) {
-		printf("mq_open failed");
-		return 1;
-	}
 
+//	std::vector<FrameBuffer> buffers;
 
-	std::vector<FrameBuffer> buffers;
-
-	mq_attr attr;
-	if (-1 == mq_getattr(released_frames_mq,&attr)) {
-		printf("mq_getattr failed");
-		return 1;
-	}
-	unsigned priority;
 	size_t count = 0;
-
-	std::array<char,1024> mq_buffer;
 
 	Autofocus autofocus(deviceDescriptor);
 	while (running == 1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 
-		std::vector<char> data(attr.mq_msgsize+1);
-
 		msghdr socket_message;
 		memset(&socket_message,0,sizeof(socket_message));
 		int result;
+
+		std::vector<char> data(1024);
+
 		{
 //				boost::timer::auto_cpu_timer timer;
 			result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
@@ -182,50 +169,38 @@ int main() {
 
 		ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
 
-		uint32_t index = readyBuffer.index;
-//    	printf("Index = %u, seconds = %ld ms = %ld\n", index,readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds);
-//    	printf("Real time diff: Index = %u, seconds = %ld, us = %ld\n", index, tp.tv_sec - readyBuffer.timestamp_seconds,(1000 + tp.tv_nsec/1000 - readyBuffer.timestamp_microseconds)%1000);
-
-		if (index >= buffers.size()) {
-			buffers.resize(index+1);
+		timeval capture_time{readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
+		std::string buffer_name = "/" + get_name_of_dequeued_buffer(capture_time);
+		int buffer_descriptor = shm_open(buffer_name.c_str(), O_RDONLY, 0);
+		if (buffer_descriptor == -1) {
+			std::cout << "Can not open shared buffer file " << buffer_name << std::endl;
+			continue;
+		}
+		size_t buffer_length = readyBuffer.width*readyBuffer.height*2;
+		void* pointer = mmap(NULL,buffer_length, PROT_READ,MAP_PRIVATE,buffer_descriptor,0);
+		close(buffer_descriptor);
+		if (pointer == MAP_FAILED) {
+			std::cout << "Can not map shared buffer " << buffer_name << std::endl;
+			continue;
 		}
 
-//TODO Finalize and test the dynamic change of the frame resolution functionality
-		FrameBuffer& savedBuffer = buffers[index];
-		if (savedBuffer.pointer == nullptr || savedBuffer.width != readyBuffer.width || savedBuffer.height != readyBuffer.height) {
-			if (savedBuffer.pointer != nullptr) {
-				munmap (savedBuffer.pointer, savedBuffer.width*savedBuffer.height*2);
-			}
-			void* pointer = mmap (NULL, readyBuffer.width*readyBuffer.height*2,
-						 PROT_READ,
-						 MAP_SHARED,
-						 deviceDescriptor, readyBuffer.offset);
-			if (pointer == MAP_FAILED) {
-				printf("mmap failed");
-				return 1;
-			}
-			savedBuffer.pointer = pointer;
-			savedBuffer.width = readyBuffer.width;
-			savedBuffer.height = readyBuffer.height;
-		}
+
 
 		timeval frame_timestamp {readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
-		yuy2::view_t frame = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(savedBuffer.pointer),readyBuffer.width*2);
+		yuy2::view_t frame = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(pointer),readyBuffer.width*2);
 
 		autofocus.submitFrame(frame_timestamp, frame);
 		count++;
 
 
 		#ifdef USE_OPENCV
-			cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)savedBuffer.pointer);
+			cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)pointer);
 			cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
 
 			cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
 		#endif
 
-				asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,mq_buffer.data(),mq_buffer.size());
-
-				mq_send(released_frames_mq,mq_buffer.data(),encode_result.encoded,0);
+		munmap(pointer,buffer_length);
 
 #ifdef USE_OPENCV
 		cv::imshow("input", output);
@@ -238,11 +213,11 @@ int main() {
 
 
 
-	for (FrameBuffer buffer: buffers) {
-		if (buffer.pointer != nullptr) {
-			munmap (buffer.pointer, buffer.width*buffer.height*2);
-		}
-	}
+//	for (FrameBuffer buffer: buffers) {
+//		if (buffer.pointer != nullptr) {
+//			munmap (buffer.pointer, buffer.width*buffer.height*2);
+//		}
+//	}
 	close(announce_socket);
 
 	return 0;

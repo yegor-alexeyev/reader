@@ -18,7 +18,7 @@
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.2008749959." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.debug.1799798859" name="Linux GCC" resourceTypeBasedDiscovery="true" superClass="cdt.managedbuild.toolchain.gnu.exe.debug">
 							<targetPlatform id="cdt.managedbuild.target.gnu.platform.exe.debug.704435957" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.debug"/>
-							<builder buildPath="${workspace_loc:/reader/Debug}" id="cdt.managedbuild.target.gnu.builder.exe.debug.1514594340" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.debug"/>
+							<builder buildPath="${workspace_loc:/reader/Debug}" enableAutoBuild="true" id="cdt.managedbuild.target.gnu.builder.exe.debug.1514594340" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.1911674636" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1434917254" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug">
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.1734088319" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
@@ -143,24 +143,6 @@
 		</configuration>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959;cdt.managedbuild.config.gnu.exe.debug.2008749959.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1434917254;cdt.managedbuild.tool.gnu.cpp.compiler.input.1502909427">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.337467216;cdt.managedbuild.config.gnu.exe.release.337467216.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.232814214;cdt.managedbuild.tool.gnu.cpp.compiler.input.1508554048">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.337467216;cdt.managedbuild.config.gnu.exe.release.337467216.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.44520194;cdt.managedbuild.tool.gnu.c.compiler.input.1120839031">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959;cdt.managedbuild.config.gnu.exe.debug.2008749959.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.384102924;cdt.managedbuild.tool.gnu.c.compiler.input.305715764">
-			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
-		</scannerConfigBuildInfo>
-	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
 		<buildTargets>
 			<target name="all" path="src" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
@@ -172,5 +154,23 @@
 				<runAllBuilders>true</runAllBuilders>
 			</target>
 		</buildTargets>
+	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.337467216;cdt.managedbuild.config.gnu.exe.release.337467216.;cdt.managedbuild.tool.gnu.c.compiler.exe.release.44520194;cdt.managedbuild.tool.gnu.c.compiler.input.1120839031">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959;cdt.managedbuild.config.gnu.exe.debug.2008749959.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.1434917254;cdt.managedbuild.tool.gnu.cpp.compiler.input.1502909427">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.release.337467216;cdt.managedbuild.config.gnu.exe.release.337467216.;cdt.managedbuild.tool.gnu.cpp.compiler.exe.release.232814214;cdt.managedbuild.tool.gnu.cpp.compiler.input.1508554048">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.config.gnu.exe.debug.2008749959;cdt.managedbuild.config.gnu.exe.debug.2008749959.;cdt.managedbuild.tool.gnu.c.compiler.exe.debug.384102924;cdt.managedbuild.tool.gnu.c.compiler.input.305715764">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 	</storageModule>
 </cproject>
