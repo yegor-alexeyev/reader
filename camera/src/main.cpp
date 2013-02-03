@@ -54,7 +54,7 @@ std::string get_name_of_queued_buffer(__u32 buffer_index) {
 
 void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
 	std::string name = get_name_of_queued_buffer(buffer_index);
-	int file_descriptor = shm_open(name.c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
+	int file_descriptor = shm_open(("/"+name).c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
 	if (file_descriptor == -1) {
 		throw std::runtime_error("shm_open fail. Unable to create " + name);
 	}
@@ -257,7 +257,10 @@ void camera_server() {
 			}
 */
 			std::cout << "userptr: " << buf.m.userptr << "length:" << buf.length << std::endl;
-			munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
+			int ret = munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
+			if (ret == -1) {
+				perror("munmap");
+			}
 
 
 			{
@@ -290,7 +293,7 @@ void camera_server() {
 			asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
 
 
-			int ret = sendto(announce_socket,ipc_buffer.data(),encode_result.encoded,0,(struct sockaddr *) &announce_address,sizeof(announce_address));
+			ret = sendto(announce_socket,ipc_buffer.data(),encode_result.encoded,0,(struct sockaddr *) &announce_address,sizeof(announce_address));
 			if (ret < 0) {
 			   perror("sendto");
 			   exit(1);
