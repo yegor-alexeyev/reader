@@ -61,6 +61,9 @@ void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
 
 	ftruncate(file_descriptor, buffer_length);
 	void* mapping = mmap(NULL, buffer_length,PROT_WRITE,MAP_SHARED,file_descriptor,0);
+	if (mapping == MAP_FAILED) {
+		throw std::runtime_error("Can not map shared buffer " + name);
+	}
 
 	close(file_descriptor);
 	return mapping;
@@ -255,6 +258,9 @@ void camera_server() {
 				return 1;
 			}
 */
+			munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
+
+
 			{
 				std::string queued_buffer_name = get_name_of_queued_buffer(buf.index);
 				std::string dequeued_buffer_name = get_name_of_dequeued_buffer(buf.timestamp);
