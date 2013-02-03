@@ -60,7 +60,7 @@ void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
 	}
 
 	ftruncate(file_descriptor, buffer_length);
-	void* mapping = mmap(NULL, buffer_length,PROT_WRITE,MAP_SHARED,file_descriptor,0);
+	void* mapping = mmap(NULL, buffer_length,PROT_READ | PROT_WRITE,MAP_SHARED,file_descriptor,0);
 	if (mapping == MAP_FAILED) {
 		throw std::runtime_error("Can not map shared buffer " + name);
 	}
@@ -72,13 +72,15 @@ void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
 void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, __u32 buffer_length) {
 
 	void* mapping = prepare_frame_buffer(buffer_index, buffer_length);
+	std::cout << "mapping: " << mapping << "length:" << buffer_length << std::endl;
+
 	queue_frame_buffer(deviceDescriptor, buffer_index,mapping,buffer_length);
 }
 
 
 
 
-std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
+void start_capturing(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
 	memset(&reqbuf, 0, sizeof(reqbuf));
@@ -109,15 +111,9 @@ std::vector<frame_buffer> request_buffers(int deviceDescriptor) {
 		mapped_buffer.pointer = prepare_frame_buffer(i,mapped_buffer.length);
 	}
 
-	return buffers;
-
-}
-
-void start_capturing(int deviceDescriptor,
-		const std::vector<frame_buffer>& mapped_buffers) {
 	enum v4l2_buf_type type;
-	for (size_t index = 0; index < mapped_buffers.size(); index++) {
-		const frame_buffer& mapped_buffer = mapped_buffers[index];
+	for (size_t index = 0; index < buffers.size(); index++) {
+		const frame_buffer& mapped_buffer = buffers[index];
 
 		queue_frame_buffer(deviceDescriptor,index,mapped_buffer.pointer,mapped_buffer.length);
 	}
@@ -125,6 +121,7 @@ void start_capturing(int deviceDescriptor,
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
 		perror("VIDIOC_STREAMON");
 }
+
 
 sig_atomic_t volatile running = 1;
 
@@ -185,8 +182,7 @@ void camera_server() {
 	set_fps(deviceDescriptor,30);
 
 
-	std::vector<frame_buffer> buffers = request_buffers(deviceDescriptor);
-	start_capturing(deviceDescriptor, buffers);
+	start_capturing(deviceDescriptor);
 
 
 	unsigned int counter;
@@ -223,7 +219,7 @@ void camera_server() {
 			memset(&buf, 0, sizeof(buf));
 
 			buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-			buf.memory = V4L2_MEMORY_MMAP;
+			buf.memory = V4L2_MEMORY_USERPTR;
 
 			if (-1 == xioctl(deviceDescriptor, VIDIOC_DQBUF, &buf)) {
 				switch (errno) {
@@ -240,7 +236,9 @@ void camera_server() {
 					exit(1);
 				}
 			}
-
+			if ((buf.flags | V4L2_BUF_FLAG_ERROR) != 0) {
+				std::cerr << "Frame buffer error" << std::endl;
+			}
 
 			printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
 		//	printf("Real time: seconds = %ld, us = %ld\n", tp.tv_sec,tp.tv_nsec/1000);
@@ -258,6 +256,7 @@ void camera_server() {
 				return 1;
 			}
 */
+			std::cout << "userptr: " << buf.m.userptr << "length:" << buf.length << std::endl;
 			munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
 
 
