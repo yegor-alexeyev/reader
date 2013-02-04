@@ -12,6 +12,8 @@
 
 #include <linux/videodev2.h>
 
+#include <map>
+
 #include <vector>
 #include <assert.h>
 #include <string.h>
@@ -41,19 +43,21 @@ struct frame_buffer {
 const uint32_t CAMERA_FRAME_WIDTH = 640;
 const uint32_t CAMERA_FRAME_HEIGHT = 480;
 
+//
+//std::string get_name_of_queued_buffer(__u32 buffer_index) {
+//	return "video0-pending-" + std::to_string(buffer_index);
+//}
+//
+//
+//
+//
 
-std::string get_name_of_queued_buffer(__u32 buffer_index) {
-	return "video0-pending-" + std::to_string(buffer_index);
-}
+std::map<unsigned long,size_t> ptrToSequenceMap;
+size_t sequence = 0;
 
 
-
-
-
-
-
-void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
-	std::string name = get_name_of_queued_buffer(buffer_index);
+void* prepare_frame_buffer(__u32 buffer_length) {
+	std::string name = get_name_of_buffer(sequence);
 	int file_descriptor = shm_open(("/"+name).c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
 	if (file_descriptor == -1) {
 		throw std::runtime_error("shm_open fail. Unable to create " + name);
@@ -66,12 +70,16 @@ void* prepare_frame_buffer(__u32 buffer_index, __u32 buffer_length) {
 	}
 
 	close(file_descriptor);
+	unsigned long userptr = reinterpret_cast<unsigned long>(mapping);
+	assert(ptrToSequenceMap.count(userptr) == 0);
+	ptrToSequenceMap[userptr] = sequence;
+	sequence++;
 	return mapping;
 }
 
-void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, __u32 buffer_length) {
+void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, uint32_t sequence_number, __u32 buffer_length) {
 
-	void* mapping = prepare_frame_buffer(buffer_index, buffer_length);
+	void* mapping = prepare_frame_buffer(buffer_length);
 	std::cout << "mapping: " << mapping << "length:" << buffer_length << std::endl;
 
 	queue_frame_buffer(deviceDescriptor, buffer_index,mapping,buffer_length);
@@ -80,7 +88,7 @@ void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, __u32 buffer
 
 
 
-void start_capturing(int deviceDescriptor) {
+size_t start_capturing(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
 	memset(&reqbuf, 0, sizeof(reqbuf));
@@ -108,7 +116,7 @@ void start_capturing(int deviceDescriptor) {
 		frame_buffer& mapped_buffer = buffers[i];
 
 		mapped_buffer.length = CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2;
-		mapped_buffer.pointer = prepare_frame_buffer(i,mapped_buffer.length);
+		mapped_buffer.pointer = prepare_frame_buffer(mapped_buffer.length);
 	}
 
 	enum v4l2_buf_type type;
@@ -120,6 +128,7 @@ void start_capturing(int deviceDescriptor) {
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
 		perror("VIDIOC_STREAMON");
+	return reqbuf.count;
 }
 
 
@@ -182,7 +191,7 @@ void camera_server() {
 	set_fps(deviceDescriptor,30);
 
 
-	start_capturing(deviceDescriptor);
+	size_t buffers_count = start_capturing(deviceDescriptor);
 
 
 	unsigned int counter;
@@ -200,7 +209,6 @@ void camera_server() {
 	announce_address.sin_family=AF_INET;
 	announce_address.sin_addr.s_addr=inet_addr(CAMERA_ANNOUNCE_GROUP);
 	announce_address.sin_port=htons(CAMERA_ANNOUNCE_PORT);
-
 
 	while (running != 0) {
 		fd_set fds;
@@ -256,26 +264,35 @@ void camera_server() {
 				return 1;
 			}
 */
+			int ret;
+			assert(ptrToSequenceMap.count(buf.m.userptr) != 0);
+			size_t sequence_number = ptrToSequenceMap[buf.m.userptr];
+			ptrToSequenceMap.erase(buf.m.userptr);
+
 			std::cout << "userptr: " << buf.m.userptr << "length:" << buf.length << std::endl;
-			int ret = munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
+
+
+//			{
+//				std::string queued_buffer_name = get_name_of_queued_buffer(buf.index);
+//				std::string buffer_name = get_name_of_buffer(buf.timestamp);
+//				chmod(("/dev/shm/" + queued_buffer_name).c_str(),S_IRUSR | S_IRGRP | S_IROTH);
+//				int ret = rename(("/dev/shm/" + queued_buffer_name).c_str(),("/dev/shm/" + dequeued_buffer_name).c_str());
+//				if (ret == -1) {
+//					throw std::runtime_error("Failed to rename file " + queued_buffer_name + " to " + dequeued_buffer_name);
+//				}
+//
+//			}
+
+			queueNextFrameBuffer(deviceDescriptor, buf.index, sequence_number, CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2);
+
+			ret = munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
 			if (ret == -1) {
 				perror("munmap");
 			}
 
 
-			{
-				std::string queued_buffer_name = get_name_of_queued_buffer(buf.index);
-				std::string dequeued_buffer_name = get_name_of_dequeued_buffer(buf.timestamp);
-				chmod(("/dev/shm/" + queued_buffer_name).c_str(),S_IRUSR | S_IRGRP | S_IROTH);
-				int ret = rename(("/dev/shm/" + queued_buffer_name).c_str(),("/dev/shm/" + dequeued_buffer_name).c_str());
-				if (ret == -1) {
-					throw std::runtime_error("Failed to rename file " + queued_buffer_name + " to " + dequeued_buffer_name);
-				}
 
-			}
-
-
-
+			std::cout << buf.sequence << std::endl;
 			BufferReference readyBuffer;
 			readyBuffer.index = buf.index;
 			readyBuffer.offset = 0;
@@ -288,6 +305,7 @@ void camera_server() {
 
 			readyBuffer.width = CAMERA_FRAME_WIDTH;
 			readyBuffer.height = CAMERA_FRAME_HEIGHT;
+			readyBuffer.sequence = sequence_number;
 
 			std::array<char,1024> ipc_buffer;
 			asn_enc_rval_t encode_result = der_encode_to_buffer(&asn_DEF_BufferReference, &readyBuffer,ipc_buffer.data(),ipc_buffer.size());
@@ -301,8 +319,6 @@ void camera_server() {
 			count++;
 
 			counter++;
-
-			queueNextFrameBuffer(deviceDescriptor, buf.index, CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2);
 
 
 		}
