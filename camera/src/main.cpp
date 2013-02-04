@@ -285,6 +285,8 @@ void camera_server() {
 
 			queueNextFrameBuffer(deviceDescriptor, buf.index, sequence_number, CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2);
 
+//TODO Investigate why the video streaming fails if the unmap call below is placed before the queueNextFrameBuffer call above.
+//Probably this is because in that case the mmap call returns the same virtual address as the munmap call had just used for the deallocation
 			ret = munmap(reinterpret_cast<void*>(buf.m.userptr),buf.length);
 			if (ret == -1) {
 				perror("munmap");
