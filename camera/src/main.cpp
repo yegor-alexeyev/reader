@@ -244,8 +244,10 @@ void camera_server() {
 					exit(1);
 				}
 			}
+
 			if ((buf.flags | V4L2_BUF_FLAG_ERROR) != 0) {
-				std::cerr << "Frame buffer error" << std::endl;
+//TODO Investigate the permanent occurence of the V4L2_BUF_FLAG_ERROR
+//				std::cerr << "Frame buffer error" << std::endl;
 			}
 
 			printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
