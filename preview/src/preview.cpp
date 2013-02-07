@@ -1,3 +1,8 @@
+
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include <libv4l2.h>
 
 #include <fcntl.h>
@@ -25,16 +30,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <boost/timer/timer.hpp>
-
-
 #include <array>
 
 #include "libv4lconvert.h"
 
 #include "BufferReference.h"
 
-#include "Autofocus.h"
 #include "yuy2.h"
 
 
@@ -86,9 +87,7 @@ int main() {
     }
 
 
-#ifdef USE_OPENCV
     cv::namedWindow("input",1);
-#endif
 
     int bpp = 1;
 
@@ -108,6 +107,7 @@ int main() {
       exit(0);
 	}
 
+
     int one = 1;
     int ret = setsockopt(announce_socket, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
     if (ret < 0) {
@@ -116,12 +116,12 @@ int main() {
     }
 
 
-
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(struct sockaddr_in));
 
     saddr.sin_family = AF_INET;
     saddr.sin_port = htons(CAMERA_ANNOUNCE_PORT);
+//    saddr.sin_port = 0; // Use the first free port
     saddr.sin_addr.s_addr = INADDR_ANY; // bind socket to any interface
     int status = bind(announce_socket, (struct sockaddr *)&saddr, sizeof(sockaddr_in));
 
@@ -144,7 +144,6 @@ int main() {
 
 	size_t count = 0;
 
-	Autofocus autofocus(deviceDescriptor);
 	while (running == 1) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
@@ -191,13 +190,20 @@ int main() {
 		timeval frame_timestamp {readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
 		yuy2::view_t frame = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(pointer),readyBuffer.width*2);
 
-		autofocus.submitFrame(frame_timestamp, frame);
 		count++;
 
 
+		cv::Mat input(readyBuffer.height,readyBuffer.width,CV_8UC2,(uint8_t*)pointer);
+		cv::Mat output(readyBuffer.height,readyBuffer.width,CV_8UC3);
+
+		cv::cvtColor(input,output,CV_YUV2BGR_YUY2);
 
 		munmap(pointer,buffer_length);
 
+		cv::imshow("input", output);
+        if(int key = cv::waitKey(1) >= 0) {
+        	break;
+        }
 	}
 	std::cout << "count:" << count << std::endl;
 

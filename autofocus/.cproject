@@ -29,11 +29,8 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.67815467" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.728760443" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.226760885" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_highgui/include}"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
-									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_imgproc/include}"/>
-									<listOptionValue builtIn="false" value="${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/[Subprojects]/opencv_core/include}"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.121162212" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1642557878" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -53,16 +50,11 @@
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.exe.debug.85253072" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.326116316" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.libs.231403333" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
-									<listOptionValue builtIn="false" value="opencv_imgproc"/>
+									<listOptionValue builtIn="false" value="rt"/>
 									<listOptionValue builtIn="false" value="boost_timer"/>
 									<listOptionValue builtIn="false" value="boost_system"/>
-									<listOptionValue builtIn="false" value="rt"/>
-									<listOptionValue builtIn="false" value="opencv_highgui"/>
-									<listOptionValue builtIn="false" value="opencv_core"/>
 								</option>
-								<option id="gnu.cpp.link.option.paths.796005145" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Debug@opencv-debug-eclipse-project/lib}&quot;"/>
-								</option>
+								<option id="gnu.cpp.link.option.paths.796005145" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.949056710" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
@@ -81,8 +73,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="123|pdu" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src/pdu"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -113,11 +104,8 @@
 								<option id="gnu.cpp.compiler.exe.release.option.optimization.level.1816157719" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.1931578253" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.604335149" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_highgui/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/shared}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/pdu}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_imgproc/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/[Subprojects]/opencv_core/include}&quot;"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.1872076090" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.575504676" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -137,13 +125,8 @@
 									<listOptionValue builtIn="false" value="rt"/>
 									<listOptionValue builtIn="false" value="boost_timer"/>
 									<listOptionValue builtIn="false" value="boost_system"/>
-									<listOptionValue builtIn="false" value="opencv_imgproc"/>
-									<listOptionValue builtIn="false" value="opencv_core"/>
-									<listOptionValue builtIn="false" value="opencv_highgui"/>
 								</option>
-								<option id="gnu.cpp.link.option.paths.1220290285" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/OpenCV-Release@opencv-release-eclipse-project/lib}&quot;"/>
-								</option>
+								<option id="gnu.cpp.link.option.paths.1220290285" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1233582169" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
 									<additionalInput kind="additionalinput" paths="$(LIBS)"/>
