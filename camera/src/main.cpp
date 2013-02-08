@@ -88,7 +88,7 @@ void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, uint32_t seq
 
 
 
-size_t start_capturing(int deviceDescriptor) {
+void start_capturing(int deviceDescriptor) {
 	struct v4l2_requestbuffers reqbuf;
 
 	memset(&reqbuf, 0, sizeof(reqbuf));
@@ -128,7 +128,6 @@ size_t start_capturing(int deviceDescriptor) {
 	type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	if (-1 == xioctl(deviceDescriptor, VIDIOC_STREAMON, &type))
 		perror("VIDIOC_STREAMON");
-	return reqbuf.count;
 }
 
 
@@ -191,7 +190,7 @@ void camera_server() {
 	set_fps(deviceDescriptor,30);
 
 
-	size_t buffers_count = start_capturing(deviceDescriptor);
+	start_capturing(deviceDescriptor);
 
 
 	unsigned int counter;

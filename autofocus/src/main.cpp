@@ -85,13 +85,6 @@ int main() {
     	return 1;
     }
 
-
-#ifdef USE_OPENCV
-    cv::namedWindow("input",1);
-#endif
-
-    int bpp = 1;
-
     bool isAutofocusAvailable = isLogitechAutofocusModeSupported(deviceDescriptor);
 
     if (isAutofocusAvailable) {
@@ -115,8 +108,6 @@ int main() {
     	return 1;
     }
 
-
-
     sockaddr_in saddr;
     memset(&saddr, 0, sizeof(struct sockaddr_in));
 
@@ -138,12 +129,6 @@ int main() {
 	  exit(1);
     }
 
-
-
-//	std::vector<FrameBuffer> buffers;
-
-	size_t count = 0;
-
 	Autofocus autofocus(deviceDescriptor);
 	while (running == 1) {
 		BufferReference readyBuffer;
@@ -155,10 +140,7 @@ int main() {
 
 		std::vector<char> data(1024);
 
-		{
-//				boost::timer::auto_cpu_timer timer;
-			result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
-		}
+		result = recvfrom(announce_socket,data.data(),data.size(),0,NULL,NULL);
 
 		if (result <= 0) {
 			perror("recvfrom");
@@ -171,7 +153,7 @@ int main() {
 
 		ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
 
-		timeval capture_time{readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
+//		timeval capture_time{readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
 		std::string buffer_name = "/" + get_name_of_buffer(readyBuffer.sequence);
 		int buffer_descriptor = shm_open(buffer_name.c_str(), O_RDONLY, 0);
 		if (buffer_descriptor == -1) {
@@ -186,28 +168,14 @@ int main() {
 			continue;
 		}
 
-
-
 		timeval frame_timestamp {readyBuffer.timestamp_seconds,readyBuffer.timestamp_microseconds};
 		yuy2::view_t frame = boost::gil::interleaved_view(readyBuffer.width,readyBuffer.height,static_cast<yuy2::ptr_t>(pointer),readyBuffer.width*2);
 
 		autofocus.submitFrame(frame_timestamp, frame);
-		count++;
-
-
 
 		munmap(pointer,buffer_length);
 
 	}
-	std::cout << "count:" << count << std::endl;
-
-
-
-//	for (FrameBuffer buffer: buffers) {
-//		if (buffer.pointer != nullptr) {
-//			munmap (buffer.pointer, buffer.width*buffer.height*2);
-//		}
-//	}
 	close(announce_socket);
 
 	return 0;

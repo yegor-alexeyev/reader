@@ -109,7 +109,7 @@ inline void set_fps( int deviceDescriptor, int fps) {
     ret = xioctl(deviceDescriptor, VIDIOC_S_PARM, &streamparm);
 	assert(ret != -1);
 
-	printf("fps set: %d/%d\n", streamparm.parm.capture.timeperframe.denominator/streamparm.parm.capture.timeperframe.numerator);
+	printf("fps set: %d/%d\n", streamparm.parm.capture.timeperframe.denominator,streamparm.parm.capture.timeperframe.numerator);
 }
 
 
