@@ -170,12 +170,13 @@ void camera_server() {
 	std::cout << "Absolute focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_ABSOLUTE) << std::endl;
 	std::cout << "Relative focus supported: " << isControlSupported(deviceDescriptor,V4L2_CID_FOCUS_RELATIVE) << std::endl;
 
-//	set_exposure_auto_priority(deviceDescriptor,true);
-//	printf("Is exposure auto priority set = %u\n", is_exposure_auto_priority(deviceDescriptor));
-//
+
 	set_manual_exposure(deviceDescriptor,true);
 	printf("Is manual exposure set = %u\n", is_manual_exposure(deviceDescriptor));
 	set_absolute_exposure(30*10,deviceDescriptor);
+
+	set_exposure_auto_priority(deviceDescriptor,false);
+	printf("Is exposure auto priority set = %u\n", is_exposure_auto_priority(deviceDescriptor));
 
 	set_auto_white_balance(deviceDescriptor,false);
 	printf("Is auto white balance set = %u\n", is_auto_white_balance_set(deviceDescriptor));

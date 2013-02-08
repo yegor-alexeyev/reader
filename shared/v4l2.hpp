@@ -166,7 +166,7 @@ inline void set_exposure_auto_priority( int deviceDescriptor, bool value) {
 
 
 inline bool is_manual_exposure( int deviceDescriptor) {
-	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,0};
+	v4l2_control control {V4L2_CID_EXPOSURE_AUTO,0};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_G_CTRL, &control) != -1;
 	assert(ret != -1);
@@ -175,7 +175,7 @@ inline bool is_manual_exposure( int deviceDescriptor) {
 
 
 inline void set_manual_exposure( int deviceDescriptor, bool value) {
-	v4l2_control control {V4L2_CID_EXPOSURE_ABSOLUTE,value ? V4L2_EXPOSURE_MANUAL : V4L2_EXPOSURE_APERTURE_PRIORITY};
+	v4l2_control control {V4L2_CID_EXPOSURE_AUTO,value ? V4L2_EXPOSURE_MANUAL : V4L2_EXPOSURE_APERTURE_PRIORITY};
 
 	int ret = xioctl(deviceDescriptor, VIDIOC_S_CTRL, &control) != -1;
 	assert(ret != -1);
