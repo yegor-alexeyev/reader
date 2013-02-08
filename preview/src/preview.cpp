@@ -3,18 +3,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <libv4l2.h>
-
 #include <fcntl.h>
 
-#include <libv4l2.h>
-#include <linux/videodev2.h>
-
 #include <string>
-#include <set>
-
-#include <signal.h>
-
 
 #include <iostream>
 #include <sys/mman.h>
@@ -23,7 +14,6 @@
 #include <cstring>
 #include <cassert>
 
-#include "v4l2.hpp"
 #include "ipc.hpp"
 
 #include <sys/socket.h>
@@ -32,31 +22,9 @@
 
 #include <array>
 
-#include "libv4lconvert.h"
-
 #include "BufferReference.h"
 
 #include "yuy2.h"
-
-
-
-void fillWithLumaFromYUY2(uint8_t yuy2[],size_t width,size_t height,uint8_t luma[]) {
-	for (size_t row = 0; row < height; row++) {
-		for (size_t column = 0; column < width; column++) {
-			luma[row*width+column] = yuy2[row*width*2+column*2+1];
-
-		}
-	}
-}
-
-
-struct FrameBuffer {
-	void* pointer;
-	size_t width;
-	size_t height;
-};
-
-
 
 
 int getInitialDirection(int focusValue) {
