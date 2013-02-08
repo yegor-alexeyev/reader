@@ -39,25 +39,6 @@
 
 
 
-void fillWithLumaFromYUY2(uint8_t yuy2[],size_t width,size_t height,uint8_t luma[]) {
-	for (size_t row = 0; row < height; row++) {
-		for (size_t column = 0; column < width; column++) {
-			luma[row*width+column] = yuy2[row*width*2+column*2+1];
-
-		}
-	}
-}
-
-
-struct FrameBuffer {
-	void* pointer;
-	size_t width;
-	size_t height;
-};
-
-
-
-
 int getInitialDirection(int focusValue) {
 	return focusValue < 192 ? 255 : 0;
 }
@@ -130,7 +111,7 @@ int main() {
     }
 
 	Autofocus autofocus(deviceDescriptor);
-	while (running == 1) {
+	while (running == 1 && !autofocus.isFocusComplete()) {
 		BufferReference readyBuffer;
 		memset(&readyBuffer,0,sizeof(readyBuffer));
 

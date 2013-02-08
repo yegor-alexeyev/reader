@@ -42,8 +42,6 @@ void Autofocus::submitFrame(const timeval& timestamp,
 		uint32_t focus_sum = calculate_focus_sum(frame);
 		detector.addFocusMeasurementResult(focus_sum);
 
-//		std::cout << focus_sum;
-
 		if (detector.isFocusStabilised()) {
 			if (iteration_number <= 2) {
 				indexOfMaximumFromZero = detector.getMaximumValueIndex();
@@ -57,18 +55,11 @@ void Autofocus::submitFrame(const timeval& timestamp,
 				std::cout << "Indexes " << indexOfMaximumFromZero << "-"
 						<< indexOfMaximumFromMax << " New value = " << (int)newFocusValue << std::endl;
 				setFocus(newFocusValue);
+				focusComplete = true;
 			}
 			iteration_number++;
 			detector = FocusAnalyser();
 
-//			uint8_t focus = get_focus_variable(deviceDescriptor);
-			//			if (focus == 255) {
-			//				break;
-			//			}
-//			set_focus_variable(deviceDescriptor, focus == 255 ? 0 : 255);
-//			clock_gettime(CLOCK_MONOTONIC, &focus_change_time);
-
-			//		    set_focus_variable(focus +1,deviceDescriptor);
 		}
 
 	}

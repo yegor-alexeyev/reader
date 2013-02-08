@@ -19,12 +19,16 @@ class Autofocus {
     int iteration_number = 1;
     size_t indexOfMaximumFromZero;
     int deviceDescriptor;
+    bool focusComplete = false;
+
+	void setFocus(uint8_t focusValue);
 
 public:
 	Autofocus(int deviceDescriptor);
-	void setFocus(uint8_t focusValue);
 	void submitFrame(const timeval& timestamp, const yuy2::c_view_t& frame);
-
+	bool isFocusComplete() {
+		return focusComplete;
+	}
 };
 
 #endif /* AUTOFOCUS_H_ */
