@@ -8,4 +8,22 @@ inline std::string get_name_of_buffer(uint32_t sequence_number) {
 	return "video0-" + std::to_string(sequence_number);
 }
 
+
+
+sig_atomic_t volatile running = 1;
+
+void termination_handler(int signal) {
+	running = 0;
+}
+
+void initialise_termination_handler() {
+	struct sigaction termination;
+	memset(&termination, 0, sizeof(struct sigaction));
+	termination.sa_handler = &termination_handler;
+	sigemptyset(&termination.sa_mask);
+	termination.sa_flags = 0;
+	sigaction(SIGTERM, &termination, NULL);
+}
+
+
 #endif

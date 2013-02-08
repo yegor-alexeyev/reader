@@ -130,20 +130,6 @@ void start_capturing(int deviceDescriptor) {
 }
 
 
-sig_atomic_t volatile running = 1;
-
-void termination_handler(int signal) {
-	running = 0;
-}
-
-void initialise_termination_handler() {
-	struct sigaction termination;
-	memset(&termination, 0, sizeof(struct sigaction));
-	termination.sa_handler = &termination_handler;
-	sigemptyset(&termination.sa_mask);
-	termination.sa_flags = 0;
-	sigaction(SIGTERM, &termination, NULL);
-}
 
 
 void camera_server() {

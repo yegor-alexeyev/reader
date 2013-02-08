@@ -63,21 +63,8 @@ int getInitialDirection(int focusValue) {
 	return focusValue < 192 ? 255 : 0;
 }
 
-
-sig_atomic_t volatile running = 1;
-
-void termination_handler(int signal) {
-	running = 0;
-}
-
-
 int main() {
-	struct sigaction termination;
-	memset(&termination, 0, sizeof(struct sigaction));
-	termination.sa_handler = &termination_handler;
-	sigemptyset(&termination.sa_mask);
-	termination.sa_flags = 0;
-	sigaction(SIGTERM, &termination, NULL);
+	initialise_termination_handler();
 
     cv::namedWindow("input",1);
 
