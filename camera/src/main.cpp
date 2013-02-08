@@ -173,7 +173,7 @@ void camera_server() {
 
 	set_manual_exposure(deviceDescriptor,true);
 	printf("Is manual exposure set = %u\n", is_manual_exposure(deviceDescriptor));
-	set_absolute_exposure(30*10,deviceDescriptor);
+	set_absolute_exposure(100,deviceDescriptor);
 
 	set_exposure_auto_priority(deviceDescriptor,false);
 	printf("Is exposure auto priority set = %u\n", is_exposure_auto_priority(deviceDescriptor));
