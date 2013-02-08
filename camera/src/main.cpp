@@ -80,7 +80,6 @@ void* prepare_frame_buffer(__u32 buffer_length) {
 void queueNextFrameBuffer(int deviceDescriptor, __u32 buffer_index, uint32_t sequence_number, __u32 buffer_length) {
 
 	void* mapping = prepare_frame_buffer(buffer_length);
-	std::cout << "mapping: " << mapping << "length:" << buffer_length << std::endl;
 
 	queue_frame_buffer(deviceDescriptor, buffer_index,mapping,buffer_length);
 }
@@ -218,8 +217,6 @@ void camera_server() {
 
 		r = select(deviceDescriptor + 1, &fds, NULL, NULL, NULL);
 
-//		std::cout << "Frame counter: " << counter << std::endl;
-
 		if (r > 0) {
 			struct v4l2_buffer buf;
 
@@ -252,37 +249,10 @@ void camera_server() {
 			printf("Index = %u, seconds = %ld us = %ld\n", buf.index,buf.timestamp.tv_sec,buf.timestamp.tv_usec);
 		//	printf("Real time: seconds = %ld, us = %ld\n", tp.tv_sec,tp.tv_nsec/1000);
 
-//			timespec tp;
-//			clock_gettime(CLOCK_MONOTONIC,&tp);
-
-/*
-			void* source_mapping = mmap (NULL, buf.bytesused,
-						 PROT_READ,
-						 MAP_SHARED,
-						 deviceDescriptor, buf.m.offset);
-			if (source_mapping == MAP_FAILED) {
-				printf("mmap failed");
-				return 1;
-			}
-*/
 			int ret;
 			assert(ptrToSequenceMap.count(buf.m.userptr) != 0);
 			size_t sequence_number = ptrToSequenceMap[buf.m.userptr];
 			ptrToSequenceMap.erase(buf.m.userptr);
-
-			std::cout << "userptr: " << buf.m.userptr << "length:" << buf.length << std::endl;
-
-
-//			{
-//				std::string queued_buffer_name = get_name_of_queued_buffer(buf.index);
-//				std::string buffer_name = get_name_of_buffer(buf.timestamp);
-//				chmod(("/dev/shm/" + queued_buffer_name).c_str(),S_IRUSR | S_IRGRP | S_IROTH);
-//				int ret = rename(("/dev/shm/" + queued_buffer_name).c_str(),("/dev/shm/" + dequeued_buffer_name).c_str());
-//				if (ret == -1) {
-//					throw std::runtime_error("Failed to rename file " + queued_buffer_name + " to " + dequeued_buffer_name);
-//				}
-//
-//			}
 
 			queueNextFrameBuffer(deviceDescriptor, buf.index, sequence_number, CAMERA_FRAME_WIDTH*CAMERA_FRAME_HEIGHT*2);
 
@@ -293,16 +263,10 @@ void camera_server() {
 				perror("munmap");
 			}
 
-
-
-			std::cout << buf.sequence << std::endl;
 			BufferReference readyBuffer;
 			readyBuffer.index = buf.index;
 			readyBuffer.offset = 0;
 			readyBuffer.size = buf.bytesused;
-		//DONE change back to frame timestamp
-//			readyBuffer.timestamp_seconds = tp.tv_sec;
-//			readyBuffer.timestamp_microseconds = tp.tv_nsec/1000;
 			readyBuffer.timestamp_seconds = buf.timestamp.tv_sec;
 			readyBuffer.timestamp_microseconds = buf.timestamp.tv_usec;
 
@@ -335,8 +299,6 @@ void camera_server() {
 		perror("close");
 
 	close(announce_socket);
-
-	std::cout << "count:" << count << std::endl;
 }
 
 int main(int, char**) {
