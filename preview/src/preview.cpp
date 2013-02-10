@@ -31,6 +31,15 @@ int getInitialDirection(int focusValue) {
 	return focusValue < 192 ? 255 : 0;
 }
 
+
+int get_milliseconds_delta(timeval before, timespec after) {
+	size_t before_msec = ((before.tv_usec+500)/1000);
+	size_t after_msec = ((after.tv_nsec+500000)/1000000);
+
+	return (after.tv_sec - before.tv_sec)*1000 + after_msec - before_msec;
+}
+
+
 int main() {
 	initialise_termination_handler();
 
@@ -94,8 +103,6 @@ int main() {
 			perror("recvfrom");
 			break;
 		}
-		timespec tp;
-		clock_gettime(CLOCK_MONOTONIC,&tp);
 
 		void* input_pointer = &readyBuffer;
 
@@ -125,6 +132,14 @@ int main() {
 		munmap(pointer,buffer_length);
 
 		cv::imshow("input", output);
+
+		timespec tp;
+		clock_gettime(CLOCK_MONOTONIC,&tp);
+
+		timeval frame_timestamp{readyBuffer.timestamp_seconds, readyBuffer.timestamp_microseconds};
+
+		std::cout << "Visual delay = " << get_milliseconds_delta(frame_timestamp,tp) << " ms" << std::endl;
+
         if(int key = cv::waitKey(1) >= 0) {
         	break;
         }

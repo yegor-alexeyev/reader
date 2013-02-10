@@ -55,6 +55,12 @@ const uint32_t CAMERA_FRAME_HEIGHT = 480;
 std::map<unsigned long,size_t> ptrToSequenceMap;
 size_t sequence = 0;
 
+int get_milliseconds_delta(timeval before, timespec after) {
+	size_t before_msec = ((before.tv_usec+500)/1000);
+	size_t after_msec = ((after.tv_nsec+500000)/1000000);
+
+	return (after.tv_sec - before.tv_sec)*1000 + after_msec - before_msec;
+}
 
 void* prepare_frame_buffer(__u32 buffer_length) {
 	std::string name = get_name_of_buffer(sequence);
@@ -270,6 +276,12 @@ void camera_server() {
 			   perror("sendto");
 			   exit(1);
 			}
+
+			timespec tp;
+			clock_gettime(CLOCK_MONOTONIC,&tp);
+
+			std::cout << "Grab frame delay = " << get_milliseconds_delta(buf.timestamp,tp) << " ms" << std::endl;
+
 			count++;
 
 			counter++;
