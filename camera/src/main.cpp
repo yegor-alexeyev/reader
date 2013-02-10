@@ -64,7 +64,7 @@ int get_milliseconds_delta(timeval before, timespec after) {
 
 void* prepare_frame_buffer(__u32 buffer_length) {
 	std::string name = get_name_of_buffer(sequence);
-	int file_descriptor = shm_open(("/"+name).c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
+	int file_descriptor = open(("/tmp/"+name).c_str(), O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR );
 	if (file_descriptor == -1) {
 		throw std::runtime_error("shm_open fail. Unable to create " + name);
 	}

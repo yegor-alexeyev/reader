@@ -108,8 +108,8 @@ int main() {
 
 		ber_decode(0,&asn_DEF_BufferReference,&input_pointer,data.data(),result);
 
-		std::string buffer_name = "/" + get_name_of_buffer(readyBuffer.sequence);
-		int buffer_descriptor = shm_open(buffer_name.c_str(), O_RDONLY, 0);
+		std::string buffer_name = "/tmp/" + get_name_of_buffer(readyBuffer.sequence);
+		int buffer_descriptor = open(buffer_name.c_str(), O_RDONLY, 0);
 		if (buffer_descriptor == -1) {
 			std::cout << "Can not open shared buffer file " << buffer_name << std::endl;
 			continue;
