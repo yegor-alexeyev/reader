@@ -1,4 +1,4 @@
 reader
 ======
 
-Optical character recognition exercises
+Modular IPC-based video-stream processing (with an example of software auto-focus feature)
