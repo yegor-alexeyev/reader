@@ -43,14 +43,6 @@ struct frame_buffer {
 const uint32_t CAMERA_FRAME_WIDTH = 640;
 const uint32_t CAMERA_FRAME_HEIGHT = 480;
 
-//
-//std::string get_name_of_queued_buffer(__u32 buffer_index) {
-//	return "video0-pending-" + std::to_string(buffer_index);
-//}
-//
-//
-//
-//
 
 std::map<unsigned long,size_t> ptrToSequenceMap;
 size_t sequence = 0;
